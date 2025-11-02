@@ -50,6 +50,9 @@ router.put("/user", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
+
+//reservation tábla----------------------------------------------------------
+
 router.get ("/reservation",async (req, res) => {
     try {
        const data = await reservationList();
@@ -94,6 +97,7 @@ router.put("/reservation", async (req, res) => {
     }
 });
 
+//table tábla-------------------------------------------------------------
 
 router.get ("/table",async (req, res) => {
     try {
@@ -139,6 +143,8 @@ router.put("/table", async (req, res) => {
     }
 });
 
+//status tábla--------------------------------------------------------------
+
 router.get ("/status",async (req, res) => {
     try {
        const data = await statusList();
@@ -183,6 +189,8 @@ router.put("/status", async (req, res) => {
     }
 });
 
+//notification tábla--------------------------------------------------------------------
+
 router.get ("/notificatiom",async (req, res) => {
     try {
        const data = await notificationList();
@@ -226,6 +234,8 @@ router.put("/notification", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
+
+//rewievs tábla---------------------------------------------------------------
 
 router.get("/review",async (req, res) => {
     try {
