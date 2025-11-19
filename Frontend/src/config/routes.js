@@ -6,12 +6,22 @@ const router = createRouter({
         {
             path:"/",
             name: "Főoldal",
-            component: () => import("../pages/App.vue"),
+            component: () => import("../pages/Home.vue"),
         },
         {
-            path:"",
-            name: "",
-            component: () => import(""),
+            path:"/login",
+            name: "Login/Registration",
+            component: () => import("../pages/Login.vue"),
+        },
+        {
+            path:"/reservation",
+            name: "Reservation",
+            component: () => import("../pages/Reservation.vue"),
+        },
+        {
+            path:"/user",
+            name: "UserProfile",
+            component: () => import("../components/UserProfile.vue"),
         },
     ],
 });
