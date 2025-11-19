@@ -50,11 +50,235 @@ router.put("/user", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-//reservation tábla---------------------------------------------------------
-//table tábla---------------------------------------------------------------
+
+//reservation tábla----------------------------------------------------------
+
+router.get ("/reservation",async (req, res) => {
+    try {
+       const data = await reservationList();
+       res.status(200).json(data); 
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    }
+});
+
+router.post ("/reservationadd", async (req, res) => {
+    const {user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers} = req.body;
+    try {
+        const data = await reservationAdd(user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers);
+        res.status(201).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    };
+    
+});
+
+router.delete("/reservation/:id", async (req, res) => {
+    const id = req.params.id
+    try {
+        const data = await reservationDelete(id);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    };
+});
+
+router.put("/reservation", async (req, res) => {
+    const {id, dtime_from, dtime_to, number_of_customers} = req.body;
+    try {
+        const data = await reservationUpdate(id, dtime_from, dtime_to, number_of_customersd);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    }
+});
+
+//table tábla-------------------------------------------------------------
+
+router.get ("/table",async (req, res) => {
+    try {
+       const data = await tableList();
+       res.status(200).json(data); 
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    }
+});
+
+router.post ("/tableadd", async (req, res) => {
+    const {capacity} = req.body;
+    try {
+        const data = await tableAdd(capacity);
+        res.status(201).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    };
+    
+});
+
+router.delete("/table/:id", async (req, res) => {
+    const id = req.params.id
+    try {
+        const data = await tableDelete(id);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    };
+});
+
+router.put("/table", async (req, res) => {
+    const {id, capacity} = req.body;
+    try {
+        const data = await tableUpdate(id, capacity);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    }
+});
+
 //status tábla--------------------------------------------------------------
-//notification tábla--------------------------------------------------------
-//rewievs tábla-------------------------------------------------------------
+
+router.get ("/status",async (req, res) => {
+    try {
+       const data = await statusList();
+       res.status(200).json(data); 
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    }
+});
+
+router.post ("/status", async (req, res) => {
+    const {status} = req.body;
+    try {
+        const data = await statusAdd(status);
+        res.status(201).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    };
+    
+});
+
+router.delete("/status/:id", async (req, res) => {
+    const id = req.params.id
+    try {
+        const data = await statusDelete(id);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    };
+});
+
+router.put("/status", async (req, res) => {
+    const {id, status} = req.body;
+    try {
+        const data = await statusUpdate(id, status);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    }
+});
+
+//notification tábla--------------------------------------------------------------------
+
+router.get ("/notificatiom",async (req, res) => {
+    try {
+       const data = await notificationList();
+       res.status(200).json(data); 
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    }
+});
+
+router.post ("/notification", async (req, res) => {
+    const {message,status,user_id,reservation_id} = req.body;
+    try {
+        const data = await notificationAdd(message,status,user_id,reservation_id);
+        res.status(201).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    };
+    
+});
+
+router.delete("/notification/:id", async (req, res) => {
+    const id = req.params.id
+    try {
+        const data = await notificationDelete(id);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    };
+});
+
+router.put("/notification", async (req, res) => {
+    const {id,message,status} = req.body;
+    try {
+        const data = await notificationUpdate(id,message,status);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    }
+});
+
+//rewievs tábla---------------------------------------------------------------
+
+router.get("/review",async (req, res) => {
+    try {
+        const data = await reviewsList();
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    }
+});
+
+router.post("/reviewadd",async (req, res) => {
+    const {rating, comment, created_at} = req.body;
+    try {
+        const data = await reviewsAdd(rating, comment, created_at,);
+        res.status(201).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message: error});
+    }
+});
+
+router.delete("/review/:id", async (req, res) => {
+    const id = req.params.id
+    try {
+        const data = await reviewsDelete(id);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    };
+});
+
+router.put("/review", async (req, res) => {
+    const {id, rating, comment, created_at} = req.body;
+    try {
+        const data = await reviewsUpdate(id, rating, comment, created_at);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    }
+});
 
 router.get("/review",async (req, res) => {
     try {
