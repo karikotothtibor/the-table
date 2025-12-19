@@ -1,14 +1,22 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed,watch } from 'vue';
 import { RouterLink } from 'vue-router';
-
+import { VueCal } from 'vue-cal';
+import 'vue-cal/style';
+import { useRouter } from 'vue-router';
 
 
 const user = ref();
 const table = ref([]);
 const status = ref([]);
-const tabstatus = ref("szabad"); 
+const reservations = ref([]);
+const tabstatus = ref("szabad");
+const events = ref([]);
+const emit = defineEmits(['loggedOut']);
+const selectedRes = ref(null);
+const selected = ref(null); 
 
+const isLoggedIn = ref(!!localStorage.getItem('token'));
 
 async function getUser() {
     try{
@@ -58,9 +66,63 @@ async function getTableStatus() {
      }
 };
 
+async function getReservation() {
+    try{
+     const response = await fetch ("http://localhost:3300/reservation");
+      if (!response.ok) throw new Error ("Nem sikerült a rendelést lekérni!");  
+      const data = await response.json();
+      reservations.value = data.reverse();
+        console.log("Reservation adatok:",reservations.value);
+
+        const event = [];
+        
+        for (let i = 0; i < data.length; i++) {
+          const foglalas = data[i];
+
+          if (foglalas.dtime_from && foglalas.dtime_to) {
+          event.push({
+            start: new Date(foglalas.dtime_from),
+            end: new Date(foglalas.dtime_to),
+            title: `Asztal ${foglalas.table_id}`,
+            class: "Reservation",
+          })
+        }}
+        // 5. Átadás a vue-cal számára
+        events.value = event;
+        console.log("Events adatok",events.value)
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
+function selectedReservation(reservation){
+  selectedRes.value = reservation;
+  selectedRes.value.user_id = reservation.user_id;
+  selectedRes.value.id = reservation.id;
+ //reservations.value.id=0;
+ console.log(selectedRes.value.id, selectedRes.value.user_id, selectedRes.value.id)
+};
+
+const cancelReservation = async () => {
+  if (confirm('Biztosan le szeretné mondani ezt a foglalást?')){
+  try {
+    await fetch(`http://localhost:3300/reservation/${selectedRes.value.id}`, {
+      method: "DELETE"
+    });alert('Foglalás sikeresen törölve!');
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 1 másodperc múlva frissít
+  } catch (err) {
+    console.error("Nem sikerült törölni:", err);
+  }
+};}
+
 const formData = defineModel({
   default:{
-    capacity:0
+    capacity:0,
+    table_id: 0,
   }
 });
 
@@ -74,32 +136,92 @@ function tableAdd() {
   })
 };
 
-function sumSzabad(){
-      let e = 0;
-  for (let index = 0; index < status.value.length; index++) {
-    if (status.value[index].status =="szabad") {
-      e++;         
-    }      
-    
-  } return (e); 
+const sumSzabad = () => {
+  return tabstatus.value.filter(t => !t.reservation || t.reservation.length === 0).length;
 };
 
-function sumFoglalt(){
-      let e = 0;
-  for (let index = 0; index < status.value.length; index++) {
-    if (status.value[index].status =="foglalt") {
-      e++;         
-    }      
-    
-  } return (e); 
+const sumFoglalt = () => {
+  return tabstatus.value.filter(t => t.reservation?.length > 0).length;
 };
 
-onMounted(()=>{
-  getUser();
-  getTable();
-  getStatus();
-  getTableStatus();
+// Modal megnyitása
+function openModal() {
+  const modal = bootstrap.Modal.getOrCreateInstance('#messageModal')
+  modal.show()
+  showModal.value = true
+}
+
+const openMessageModal = (reservation) => {
+  // user objektum a users listából
+  const user = users.value.find(u => u.id === reservation.user_id) || null
+  selectedUser.value = user
+  selectedResForMessage.value = reservation
+  messageText.value = ''
+}
+
+onMounted(async()=>{
+  await getUser();
+  if (me.value?.role !== 'ADMIN') {
+  router.replace('/')};
+  await getReservation();
+  await getTable();
+  await getStatus();
+  await getTableStatus();;
 });
+
+function tableAdd() {
+    fetch("http://localhost:3300/tableadd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        capacity: formData.value.capacity,
+    })
+  })
+};
+
+function tableUpdate(){
+  fetch ("http://localhost:3300/table",{
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: formData.value.table_id,
+        capacity: formData.value.capacity,
+  })
+  }
+)};
+
+function selectedTable(tables){
+  selected.value = tables;
+  formData.value.table_id=tables.id;
+  console.log(formData.value.table_id, selected)
+  alert("Asztal kiválasztva!")
+};
+
+const deleteTable = async () => {
+    if (!formData.value.table_id) {
+    alert('Először válasszon ki egy asztalt!');
+    return;
+  }
+  if (confirm('Biztosan ki szeretné törölni ezt az asztalt?')){
+  try {
+    await fetch(`http://localhost:3300/table/${formData.value.table_id}`, {
+      method: "DELETE"
+    });alert('Asztal sikeresen törölve!');
+  } catch (err) {
+    console.error("Nem sikerült törölni:", err);
+  }
+};}
+
+const logout = () => {
+  localStorage.removeItem("token");
+  if (confirm('Biztosan ki szeretne jelentkezni?')) {
+            alert('Sikeres kijelentkezés!');}
+  emit("logged-out");
+      setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+};
+
 </script>
 <template>
 <header class="navbar navbar-light bg-white shadow-sm px-4 align-items-center">
@@ -124,13 +246,20 @@ onMounted(()=>{
     <aside class="col-md-3 col-lg-2 bg-dark text-white p-4">
       <h4 class="mb-4"><i class="fa-solid fa-utensils me-2 text-info"></i> Menü</h4>
       <nav class="nav flex-column">
-        <a href="#" class="nav-link text-white active"><i class="fa fa-home me-2"></i> Vezérlőpult</a>
-        <a href="#" class="nav-link text-white"><i class="fa fa-chair me-2"></i> Asztalok kezelése</a>
-        <a href="#" class="nav-link text-white"><i class="fa fa-calendar-alt me-2"></i> Foglalások</a>
-        <a href="#" class="nav-link text-white"><i class="fa fa-clipboard-list me-2"></i> Rendelések</a>
-        <a href="#" class="nav-link text-white"><i class="fa fa-user me-2"></i> Vendégek</a>
-        <a href="#" class="nav-link text-white"><i class="fa fa-chart-line me-2"></i> Statisztikák</a>
-        <a href="#" class="nav-link text-white"><i class="fa fa-cog me-2"></i> Beállítások</a>
+        <a href="#Asztalok" class="nav-link text-white"><i class="fa fa-chair me-2"></i> Asztalok kezelése</a>
+        <a href="#Foglalasok" class="nav-link text-white"><i class="fa fa-calendar-alt me-2"></i> Foglalások</a>
+        <a href="#Rendelesek" class="nav-link text-white"><i class="fa fa-clipboard-list me-2"></i> Rendelések</a>
+        <a href="#Uzenetek" class="nav-link text-white"><i class="fa-solid fa-envelope me-2"></i> Üzenetek</a>
+        <a href="#Foglalas" class="nav-link text-white"><i class="fa fa-user me-2"></i> Új foglalás</a>
+        <a href="#Naptar" class="nav-link text-white"><i class="fa fa-calendar-alt me-2"></i> Naptár</a>
+        <a href="#Velemenyek" class="nav-link text-white"><i class="fa fa-comment-alt me-2"></i>Vélemények</a>
+      
+        <div class="logout-btn">
+          <button class="btn btn-warning " @click="logout">
+            <i class="fas fa-sign-out-alt me-2"></i>Kijelentkezés
+          </button>
+        </div>
+      
       </nav>
     </aside>
 
@@ -168,7 +297,7 @@ onMounted(()=>{
             <div class="p-3 rounded bg-danger bg-opacity-10 mb-2">
               <i class="fas fa-shopping-basket fs-3 text-danger"></i>
             </div>
-            <div class="fs-4">7</div>
+            <div class="fs-4">1</div>
             <div class="small text-muted">Aktív rendelés</div>
           </div>
         </div>
@@ -205,14 +334,35 @@ onMounted(()=>{
           </div>
         </div>
         <div class="row">
-          <div class="col-md-6 ">
-            <div class="border rounded p-3 text-center " v-for="tables in table">
+          <div class="col-md-12 col-lg-12  d-flex overflow-auto">
+              <div class="border rounded p-3 text-center col-3 m-1 " v-for="tables in table" @click="selectedTable(tables)">
               <div class="fs-2 text-info">{{tables.id}}</div>
-              <span class="badge bg-success mb-2">{{tabstatus.status}}</span>
               <div class="mb-1">{{tables.capacity}}</div>
               <div>
-                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-pen"></i></button>
-                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-trash"></i></button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#myUpdateModal"  ><i class="fas fa-pen"></i></button>
+                  <div class="modal fade" id="myUpdateModal" tabindex="-1" aria-labelledby="myUpdateModalLabel" aria-hidden="true" @click.stop>
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="myUpdateModalLabel">Űrlap</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                        </div>
+                        <div class="modal-body">
+                          <form id="myUpdateForm">
+                            <div class="mb-3">
+                              <label for="name" class="form-label">Kapacitás</label>
+                              <input type="text" class="form-control" id="name" required v-model="formData.capacity">
+                            </div>
+                          </form>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bezár</button>
+                          <button type="submit" class="btn btn-primary" form="myUpdateForm" @click.stop="tableUpdate()">Elküld</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <button class="btn btn-outline-secondary btn-sm" @click.stop="deleteTable"><i class="fas fa-trash"></i></button>
               </div>
             </div>
           </div>
@@ -222,12 +372,12 @@ onMounted(()=>{
       </div>
 
       <!-- Foglalások táblázat -->
-      <div class="card mb-4 col-md-9 col-lg-10">
+      <div class="card mb-4 col-md-9 col-lg-10" id="Foglalasok" style="height: 25rem;">
         <div class="card-header">
           <h2 class="mb-0">Aktuális Foglalások</h2>
         </div>
         <div class="card-body table-responsive">
-          <table class="table table-hover">
+          <table class="table table-hover overflow-hidden " v-for="reservation in reservations" >
             <thead>
               <tr>
                 <th>Asztal</th>
@@ -240,22 +390,21 @@ onMounted(()=>{
             </thead>
             <tbody>
               <tr>
-                <td>2</td>
-                <td>Kovács Péter</td>
-                <td>2023-11-15 18:00</td>
-                <td>4</td>
-                <td><span class="badge bg-danger">Foglalt</span></td>
+                <td >{{reservation.table_id}}</td>
+                <td ><span v-for="user in users" v-show="reservation.user_id === user.id">{{reservation.guest_name}}</span></td>
+                <td>{{reservation.dtime_from.split("T")[0]}}  {{  reservation.dtime_from.split("T")[1].split('.')[0].slice(0, -3)}}</td>
+                <td>{{ reservation.number_of_customers }}</td>
+                <td><span class="badge bg-danger"  v-if="reservation.status_id === 2">Foglalt</span><span class="badge bg-success"  v-if="reservation.status_id === 1">Szabad</span></td>
                 <td>
-                  <button class="btn btn-sm btn-info"><i class="fa fa-eye"></i></button>
-                  <button class="btn btn-sm btn-secondary"><i class="fa fa-comment"></i></button>
+                  <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#messageModal" @click="openMessageModal(reservation)"><i class="fa fa-comment"></i></button>
+                  <button class="btn btn-outline-secondary btn-sm" @click="selectedReservation(reservation); cancelReservation()"><i class="fas fa-trash"></i></button>
                 </td>
               </tr>
-              <!-- ... további foglalások ... -->
             </tbody>
           </table>
         </div>
       </div>
-      <!-- ... További szekciók ugyanígy cards, table, form ...-->
+
        <!-- Aktuális Rendelések -->
       <div class="card mb-4 shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -402,5 +551,11 @@ onMounted(()=>{
     </main>
   </div>
 </div>
-
+<div class="card mb-4 shadow-sm col-md-12 col-lg-12 vh=20" id="Naptar">
+          <vue-cal          
+          :events="events || []"
+          active-view="day"
+          :time-from="11 * 60" :time-to="24 * 60" :time-step="30"
+          @view-change="(e) => console.log('view-change', e)"/>
+      </div>
 </template>
