@@ -6,15 +6,28 @@ import 'vue-cal/style';
 import { useRouter } from 'vue-router';
 
 
-const user = ref();
+const router = useRouter();
+const messageText = ref('');
+const users = ref([]);
 const table = ref([]);
 const status = ref([]);
 const reservations = ref([]);
 const tabstatus = ref("szabad");
+const date = ref('');
+const time = ref('');
+const timeOffSet= ref('');
+const currentDate = ref('');
+const currentTime = ref('');
+const currentDateTime = ref('');
+const currentDateCut = ref(new Date);
 const events = ref([]);
 const emit = defineEmits(['loggedOut']);
+const selected = ref(null);
+const selectedUser = ref(null);
 const selectedRes = ref(null);
-const selected = ref(null); 
+const selectedResForMessage = ref(null);
+const showModal = ref(false);
+ 
 
 const isLoggedIn = ref(!!localStorage.getItem('token'));
 
@@ -23,11 +36,30 @@ async function getUser() {
      const res = await fetch ("http://localhost:3300/user");
       if (!res.ok) throw new Error ("Nem sikerült a felhasználót lekérni!");  
       const data = await res.json();
-      user.value = data;
+      users.value = data;
      }catch (error) {
       console.error(error);
-      user.value = {id:0, name:"", email:""};
+      users.value = {id:0, name:"", email:""};
      }
+};
+
+const fetchMe = async () => {
+  if (!isLoggedIn.value) return;
+  try {
+    const res = await fetch("http://localhost:3300/me", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    if (!res.ok) {
+      emit("logged-out");
+      return;
+    }
+    me.value = await res.json();
+    console.log("Users adatok",me.value,me.value.role)
+  } catch (err) {
+    console.error("Nem sikerült lekérni a profilt:", err);
+  }
 };
 
 async function getTable() {
@@ -48,6 +80,19 @@ async function getStatus() {
       if (!response.ok) throw new Error ("Nem sikerült a asztalt lekérni!");  
       const data = await response.json();
       status.value = data;
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
+async function getNotification() {
+    try{
+     const response = await fetch ("http://localhost:3300/notification");
+      if (!response.ok) throw new Error ("Nem sikerült üzenetet lekérni!");  
+      const data = await response.json();
+      notifications.value = data;
+      console.log("Üzenet adatok",notifications.value)
      }catch (error) {
       console.error(error);
       
@@ -122,19 +167,17 @@ const cancelReservation = async () => {
 const formData = defineModel({
   default:{
     capacity:0,
+    user_id : 0,
+    reservation_id: 0,
     table_id: 0,
+    status_id: 0,
+    dtime_from: "",
+    dtime_to: "",
+    number_of_customers: 0,
+    guest_name:"",
   }
 });
 
-function tableAdd() {
-    fetch("http://localhost:3300/tableadd", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        capacity: formData.value.capacity,
-    })
-  })
-};
 
 const sumSzabad = () => {
   return tabstatus.value.filter(t => !t.reservation || t.reservation.length === 0).length;
@@ -143,6 +186,13 @@ const sumSzabad = () => {
 const sumFoglalt = () => {
   return tabstatus.value.filter(t => t.reservation?.length > 0).length;
 };
+
+const userReservations = computed(() => {
+  if (!selectedUser.value) return [];
+  return reservations.value.filter(
+    res => res.user_id === selectedUser.value.id
+  );
+});
 
 // Modal megnyitása
 function openModal() {
@@ -159,6 +209,43 @@ const openMessageModal = (reservation) => {
   messageText.value = ''
 }
 
+async function messageAdd() {
+  if (!selectedUser.value || !selectedResForMessage.value || !messageText.value.trim()) {
+    alert('Kérem tölje ki az összes mezőt!');
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3300/notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: selectedUser.value.id,
+        reservation_id: selectedResForMessage.value.id,
+        message: messageText.value.trim(),
+        status: "ELKULDVE",
+        sender_id: me.value.id
+      })
+    });
+
+    if (response.ok) {
+      alert('Üzenet elküldve!');
+      const modal = bootstrap.Modal.getOrCreateInstance('#messageModal')
+      modal.hide();
+      showModal.value = false;
+      selectedUser.value = null
+      selectedRes.value = null
+      messageText.value = ''
+      await getNotification(); // Frissítjük a listát
+    } else {
+      alert('Hiba az üzenet küldésekor!');
+    }
+  } catch (error) {
+    console.error('Üzenetküldés hiba:', error);
+    alert('Hálózati hiba!');
+  }
+};
+
 onMounted(async()=>{
   await getUser();
   if (me.value?.role !== 'ADMIN') {
@@ -166,7 +253,8 @@ onMounted(async()=>{
   await getReservation();
   await getTable();
   await getStatus();
-  await getTableStatus();;
+  await getTableStatus();
+  await getNotification();
 });
 
 function tableAdd() {
@@ -221,6 +309,37 @@ const logout = () => {
       window.location.reload();
     }, 1000);
 };
+
+const dtime_from = computed(() => {
+  const result = `${date.value}T${time.value}:00`;
+  // Automatikusan beállítjuk a formData-ba is
+  formData.value.dtime_from = result;
+  return result;
+})
+
+const dateTimeOffset = computed(() => {
+  const [t,tp] = time.value.split(':').map(Number);
+  const [ts,tsp] = timeOffSet.value.split(':').map(Number);
+  const newHours = (t + ts) % 24
+  const minutes = (tp + tsp)
+  const formattedHours = newHours.toString().padStart(2, '0')
+  const formattedMinutes = minutes.toString().padStart(2, '0')
+  return `${formattedHours}:${formattedMinutes}`
+})
+
+const dtime_to = computed(() => {
+   const result = `${date.value}T${dateTimeOffset.value}:00`;
+  // Automatikusan beállítjuk a formData-ba is
+  formData.value.dtime_to = result;
+  return result;
+})
+
+watch(() => formData.value.table_id, (newId) => {
+  console.log('Asztal megváltozott:', newId);
+  
+  const tables = table.value.find(t => t.id === parseInt(newId));
+  selectedTable.value = tables || null;
+}, { immediate: true })
 
 </script>
 <template>
@@ -428,37 +547,79 @@ const logout = () => {
               <tr>
                 <td>124</td>
                 <td>2</td>
-                <td>Lasagne, Cola, Tiramisu</td>
                 <td><span class="badge bg-info text-dark">Feldolgozás alatt</span></td>
                 <td class="d-flex gap-2">
                   <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-check"></i></button>
                   <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></button>
                 </td>
               </tr>
-              <!-- További rendelések -->
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Hibajelentések -->
-      <div class="card mb-4 shadow-sm">
-        <div class="card-header">
+      <!-- Üzenetek-->
+      <div class="card mb-4 shadow-sm" id="Uzenetek">
+        <div class="card-header d-flex justify-content-between align-items-center">
           <h2 class="card-title mb-0">Üzenetek és hibajelentések</h2>
+          <button type="button" class="btn btn-primary" data-bs-target="#messageModal" @click="openModal"><i class="fas fa-plus"></i> Új Üzenet</button>
+          <div class="modal fade" id="messageModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Üzenet küldése</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Címzett</label>
+                  <select class="form-select" v-model="selectedUser">
+                    <option value="">Válasszon felhasználót</option>
+                    <option v-for="user in users" :key="user.id" :value="user">
+                      {{ user.name}}
+                    </option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Foglalás</label>
+                  <select class="form-select" v-if="selectedUser" v-model="selectedResForMessage">
+                    <option value="">Válasszon foglalást</option>
+                    <option  v-for="res in userReservations" :key="res.id" :value="res" >
+                      Asztal {{ res.table_id }} • {{ res.dtime_from.split('T')[0] }} {{ res.dtime_from.split('T')[1].slice(0,5) }}
+                    </option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Üzenet</label>
+                  <textarea class="form-control" rows="4" v-model="messageText"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  Mégse
+                </button>
+                <button type="button" class="btn btn-primary" @click="messageAdd">
+                  Küldés
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="card-body p-3" style="max-height:350px; overflow-y:auto;">
+        </div>
+        <div class="card-body p-3" style="max-height:350px; overflow-y:auto;" v-for="notification in notifications">
           <!-- Egy üzenet -->
-          <div class="d-flex gap-3 p-3 border-bottom border-light bg-light rounded mb-2">
+          <div class="d-flex gap-3 p-3 border-bottom border-light bg-light rounded mb-2 hover-overlay" v-if="notification.user_id === me.id">
             <div class="bg-info text-white rounded d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
               <i class="fas fa-exclamation-circle"></i>
             </div>
-            <div>
-              <h4 class="h6 mb-1">Hiba asztal #4 foglalásában</h4>
-              <p class="mb-1 small text-muted">A foglalás dátuma ütközik egy másik foglalással, valószínűleg rendszerhiba miatt.</p>
-              <div class="small text-muted">10:23 AM • Ma</div>
+            <div v-for="user in users">
+            <div v-if="notification.user_id === me.id && notification.sender_id === user.id" >
+              <h4 class="h6 mb-1">{{ user.name }}</h4>
+              <p class="mb-1 small text-muted">{{ notification.message }}</p>
+              <div class="small text-muted"></div>
+            </div>
             </div>
           </div>
-          <!-- További üzenetek -->
         </div>
       </div>
 
