@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const messageText = ref('');
 const users = ref([]);
+const userSelected = ref(null);
 const table = ref([]);
 const status = ref([]);
 const reservations = ref([]);
@@ -20,14 +21,17 @@ const currentDate = ref('');
 const currentTime = ref('');
 const currentDateTime = ref('');
 const currentDateCut = ref(new Date);
+const notifications = ref([]);
+const me = ref(null);
 const events = ref([]);
 const emit = defineEmits(['loggedOut']);
 const selected = ref(null);
 const selectedUser = ref(null);
+const selectedHour = ref(null);
 const selectedRes = ref(null);
 const selectedResForMessage = ref(null);
 const showModal = ref(false);
- 
+const openningHours = ref([]);
 
 const isLoggedIn = ref(!!localStorage.getItem('token'));
 
@@ -99,6 +103,19 @@ async function getNotification() {
      }
 };
 
+async function getOpenningHours() {
+    try{
+     const response = await fetch ("http://localhost:3300/openninghours");
+      if (!response.ok) throw new Error ("Nem sikerült nyitvatartási táblát lekérni!");  
+      const data = await response.json();
+      openningHours.value = data;
+      console.log("Nyitvatartási adatok",openningHours.value)
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
 async function getTableStatus() {
     try{
      const response = await fetch ("http://localhost:3300/tablestatus");
@@ -164,6 +181,8 @@ const cancelReservation = async () => {
   }
 };}
 
+
+
 const formData = defineModel({
   default:{
     capacity:0,
@@ -175,6 +194,9 @@ const formData = defineModel({
     dtime_to: "",
     number_of_customers: 0,
     guest_name:"",
+    day_of_week:'',
+    open_time: 0,
+    close_time: 0,
   }
 });
 
@@ -186,6 +208,55 @@ const sumSzabad = () => {
 const sumFoglalt = () => {
   return tabstatus.value.filter(t => t.reservation?.length > 0).length;
 };
+
+function selectedOpeningHours(openningHour){
+  selectedHour.value = openningHour;
+  selectedHour.value.id = openningHour.id;
+ console.log(selectedHour.value.id , selectedHour.value.id)
+};
+
+function openingHoursAdd() {
+    fetch("http://localhost:3300/openninghours",{
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        day_of_week: formData.value.day_of_week,
+        open_time: Number(formData.value.open_time),
+        close_time: Number(formData.value.close_time)
+    })
+  })
+  setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+};
+
+const deleteOpeningHours = async () => {
+  if (confirm('Biztosan ki szeretné törölni a nyitvatartási időt?')){
+  try {
+    await fetch(`http://localhost:3300/openninghours/${selectedHour.value.id}`, {
+      method: "DELETE"
+    });alert('Sikeresen törölve!');
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 1 másodperc múlva frissít
+  } catch (err) {
+    console.error("Nem sikerült törölni:", err);
+  }
+};}
+
+function openningHoursUpdate(){
+  fetch ("http://localhost:3300/openninghours",{
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: selectedHour.value.id,
+        day_of_week: selectedHour.value.day_of_week,
+        open_time: formData.value.open_time,
+        close_time: formData.value.close_time
+  })
+  }
+)};
 
 const userReservations = computed(() => {
   if (!selectedUser.value) return [];
@@ -207,6 +278,18 @@ const openMessageModal = (reservation) => {
   selectedUser.value = user
   selectedResForMessage.value = reservation
   messageText.value = ''
+}
+
+function openHoursModal() {
+  const modal = bootstrap.Modal.getOrCreateInstance('#editHoursModal')
+  modal.show()
+  showModal.value = true
+}
+
+function openUpdateHoursModal() {
+  const modal = bootstrap.Modal.getOrCreateInstance('#updateHoursModal')
+  modal.show()
+  showModal.value = true
 }
 
 async function messageAdd() {
@@ -246,8 +329,50 @@ async function messageAdd() {
   }
 };
 
+const nameRegex = /^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+(\s+[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+)+$/
+
+function reservationAdd() {
+  if (!nameRegex.test(formData.value.guest_name?.trim() || '')) {
+    alert('Adj meg teljes nevet (vezetéknév és keresztnév).')
+    return
+  }
+  if(!date.value || !time.value){
+    alert("A dátum és időmegadása megadása kötelező");
+    return;
+  }
+    if(!timeOffSet.value){
+    alert("A foglalás várható időtartam megadása kötelező");
+    return;
+  }
+      if(!formData.value.number_of_customers){
+    alert("A vendégek számának megadása kötelező");
+    return;
+  }
+
+    fetch("http://localhost:3300/reservationadd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json"},
+      body: JSON.stringify({
+        user_id: 1,
+        table_id: formData.value.table_id,
+        status_id: 2,
+        dtime_from: formData.value.dtime_from,
+        dtime_to: formData.value.dtime_to,
+        number_of_customers: formData.value.number_of_customers,
+        guest_name: formData.value.guest_name
+    })
+  })
+  alert("✅ Sikeres foglalás! Köszönjük, hogy minket választott!");
+
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 1 másodperc múlva frissít
+};
+
 onMounted(async()=>{
   await getUser();
+  await fetchMe()
   if (me.value?.role !== 'ADMIN') {
   router.replace('/')};
   await getReservation();
@@ -255,6 +380,7 @@ onMounted(async()=>{
   await getStatus();
   await getTableStatus();
   await getNotification();
+  await getOpenningHours();
 });
 
 function tableAdd() {
@@ -299,6 +425,20 @@ const deleteTable = async () => {
     console.error("Nem sikerült törölni:", err);
   }
 };}
+
+currentDate.value = new Date();
+currentTime.value = new Date().toLocaleTimeString('hu-HU', { 
+  hour: '2-digit', 
+  minute: '2-digit',
+  hour12: false 
+});
+
+currentDateTime.value = `${currentDate.value} ${currentTime.value}`;
+console.log(currentDateTime);
+
+currentDate.value = new Date();
+currentDateCut.value = new Date().toISOString().split("T")[0];
+console.log( currentDateCut.value);
 
 const logout = () => {
   localStorage.removeItem("token");
@@ -377,8 +517,7 @@ watch(() => formData.value.table_id, (newId) => {
           <button class="btn btn-warning " @click="logout">
             <i class="fas fa-sign-out-alt me-2"></i>Kijelentkezés
           </button>
-        </div>
-      
+        </div>      
       </nav>
     </aside>
 
@@ -623,51 +762,157 @@ watch(() => formData.value.table_id, (newId) => {
         </div>
       </div>
 
-      <!-- Új asztal felvétele -->
-      <div class="card mb-4 shadow-sm">
+      <!-- Új foglalás felvétele -->
+      <div class="card mb-4 shadow-sm" id="Foglalas">
         <div class="card-header">
-          <h2 class="card-title mb-0">Új Asztal Felvétele</h2>
-        </div>
-        <div class="card-body">
-          <form class="row g-3">
-            <div class="col-md-6">
+          <h2 class="card-title mb-0">Új Foglalás Felvétele</h2>
+          <form class="bg-white p-4 rounded shadow-sm sticky-top" @submit.prevent="reservationAdd">
+        <h4 class="text-primary mb-5" >Asztalfoglalás</h4>
+        <div class="mb-3" >
+          <div class="col-md-6">
               <label for="tableNumber" class="form-label">Asztal száma</label>
-              <input type="text" class="form-control" id="tableNumber" placeholder="Adja meg az asztal számát" />
-            </div>
-            <div class="col-md-6">
-              <label for="tableCapacity" class="form-label">Kapacitás</label>
-              <input type="number" class="form-control" id="tableCapacity" placeholder="Fő száma" />
-            </div>
-            <div class="col-12">
-              <label for="tableLocation" class="form-label">Asztal elhelyezkedése</label>
-              <select class="form-select" id="tableLocation">
-                <option value="">Válasszon helyet</option>
-                <option value="terasz">Terasz</option>
-                <option value="belso">Belső terem</option>
-                <option value="kert">Kert</option>
-                <option value="ablak">Ablak mellett</option>
-                <option value="belseje">Terem belseje</option>
+              <select class="form-select" v-model="formData.table_id" @change.stop="selectedTable(table.find(t => t.id === Number(formData.table_id)))">
+                <option  value="">Válasszon helyet</option>
+                <option  v-for="tables in table" :value="tables.id" :key="tables.id"  >{{tables.id}}</option>
               </select>
             </div>
-            <div class="col-12">
-              <label for="tableDescription" class="form-label">Megjegyzések</label>
-              <textarea class="form-control" id="tableDescription" rows="3" placeholder="Írjon le egyedi jellemzőket..."></textarea>
-            </div>
-            <div class="col-12 d-flex justify-content-end">
-              <button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i> Asztal felvétele</button>
-            </div>
-          </form>
+        <div class="mb-3">
+          <label for="date" class="form-label">Foglalás időpontja</label>
+          <input type="date" id="date" class="form-control" :min="currentDateCut" required v-model="date">
         </div>
-      </div>
+        <div class="row mb-3">
+          <div class="col" >
+            <label for="time" class="form-label" >Időpont</label>
+            <select id="time" class="form-select" v-model="time" required>
+              <option>17:00</option>
+              <option>18:00</option>
+              <option>19:00</option>
+              <option>20:00</option>
+              <option>21:00</option>
+              <option>22:00</option>
+              <option>23:00</option>
+            </select>
+          </div>
+          </div>
+          
+          <p >{{dtime_from}}</p>
+         
+          <div class="col mb-3">
+            <label for="time" class="form-label">A foglalás várható hossza</label>
+            <select id="time" class="form-select" v-model="timeOffSet" required>
+              <option>0:30</option>
+              <option>1:00</option>
+              <option>1:30</option>
+              <option>2:00</option>
+            </select>
+          </div>
+          <p>{{ dtime_to }}</p>
+
+          <div class="col">
+            <label for="guests" class="form-label" >Vendégek száma</label>
+            <select id="guests" class="form-select" v-if="selected" v-model="formData.number_of_customers" required>
+              <option v-for="cap in selected.capacity">{{ cap }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Teljes név</label>
+            <input 
+              type="text"
+              id="name" 
+              class="form-control bg-light"
+              v-model="formData.guest_name"
+              required 
+              pattern="^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+( [A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+)+$"
+              title="Kérjük, adjon meg legalább két nevet, csak betűkkel." 
+              >
+        </div>
+        <div v-if="reservations.some(r => 
+            r.table_id === Number(formData.table_id) && 
+            new Date(dtime_from) < new Date(r.dtime_to) && 
+            new Date(dtime_to) > new Date(r.dtime_from)
+          )" 
+          class="alert alert-danger p-3 mb-3"> <span >Átfedés!Ebben az időpontban foglalt: {{ dtime_from }} - {{ dtime_to }}</span> </div>
+        <button type="submit"
+          v-else
+          class="btn btn-primary w-100" 
+          @click.prevent="reservationAdd()"
+        >Foglalás megerősítése</button>
+      </form>
+    </div>
+    </div>
 
       <!-- Nyitvatartási Idők -->
       <div class="card mb-4 shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h2 class="card-title mb-0">Nyitvatartási Idők</h2>
           <div>
-            <button class="btn btn-outline-primary btn-sm me-2" id="editHours">
-              <i class="fas fa-edit"></i> Szerkesztés
-            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm me-2" data-bs-target="#editHoursModal" @click="openHoursModal"><i class="fas fa-edit"></i> Új Nyitvatartás</button>
+          <div class="modal fade" id="editHoursModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Nyitvatartás hozzáadás</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Nap kiválasztása</label>
+                  <select class="form-select" v-model="formData.day_of_week">
+                    <option value="">Válasszon Napot</option>
+                    <option value="Hétfő">Hétfő</option>
+                    <option value="Kedd">Kedd</option>
+                    <option value="Szerda">Szerda</option>
+                    <option value="Csütörtök">Csütörtök</option>
+                    <option value="Péntek">Péntek</option>
+                    <option value="Szombat">Szombat</option>
+                    <option value="Vasárnap">Vasárnap</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Nyitás ideje</label>
+                  <select class="form-select" v-model.number="formData.open_time">
+                    <option value="">Válasszon időpontot</option>
+                    <option :value="6">6:00</option>
+                    <option :value="7">7:00</option>
+                    <option :value="8">8:00</option>
+                    <option :value="9">9:00</option>
+                    <option :value="10">10:00</option>
+                    <option :value="11">11:00</option>
+                    <option :value="12">12:00</option>
+                    <option :value="13">13:00</option>
+                    <option :value="14">14:00</option>
+                    <option :value="15">15:00</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Zárás ideje</label>
+                  <select class="form-select" v-model.number="formData.close_time">
+                    <option value="">Válasszon időpontot</option>
+                    <option :value="14">14:00</option>
+                    <option :value="15">15:00</option>
+                    <option :value="16">16:00</option>
+                    <option :value="17">17:00</option>
+                    <option :value="18">18:00</option>
+                    <option :value="19">19:00</option>
+                    <option :value="20">20:00</option>
+                    <option :value="21">21:00</option>
+                    <option :value="22">22:00</option>
+                    <option :value="23">23:00</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  Mégse
+                </button>
+                <button type="button" class="btn btn-primary" @click="openingHoursAdd">
+                  Küldés
+                </button>
+              </div>
+            </div>
+          </div>
+          </div>
             <button class="btn btn-outline-success btn-sm me-2" id="saveHours" style="display:none;">
               <i class="fas fa-save"></i> Mentés
             </button>
@@ -675,44 +920,81 @@ watch(() => formData.value.table_id, (newId) => {
               <i class="fas fa-times"></i> Mégse
             </button>
           </div>
+          </div>
         </div>
         <div class="card-body">
           <div class="list-group">
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <span class="fw-medium">Hétfő</span>
-              <span class="text-muted" contenteditable="false">11:00 - 22:00</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <span class="fw-medium">Kedd</span>
-              <span class="text-muted" contenteditable="false">11:00 - 22:00</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <span class="fw-medium">Szerda</span>
-              <span class="text-muted" contenteditable="false">11:00 - 22:00</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <span class="fw-medium">Csütörtök</span>
-              <span class="text-muted" contenteditable="false">11:00 - 22:00</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <span class="fw-medium">Péntek</span>
-              <span class="text-muted" contenteditable="false">11:00 - 23:00</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <span class="fw-medium">Szombat</span>
-              <span class="text-muted" contenteditable="false">12:00 - 23:30</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2">
-              <span class="fw-medium">Vasárnap</span>
-              <span class="text-muted" contenteditable="false">12:00 - 21:00</span>
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2" v-for="openningHour in openningHours" :key="openningHour.id" @click="selectedOpeningHours(openningHour)">
+              <span class="fw-medium">{{openningHour.day_of_week}}</span>
+              <span class="text-muted" contenteditable="false">{{openningHour.open_time}}:00 - {{ openningHour.close_time }}:00</span>
+            
+            <button class="btn btn-outline-secondary btn-sm" @click="deleteOpeningHours"><i class="fas fa-trash"></i></button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#updateHoursModal" @click="openUpdateHoursModal" ><i class="fas fa-pen"></i></button>
+            <div class="modal fade" id="updateHoursModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Nyitvatartás Módositása</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Nap kiválasztása</label>
+                  <select class="form-select"  v-model="formData.day_of_week">
+                    <option value="">{{selectedHour?.day_of_week}}</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Nyitás ideje</label>
+                  <select class="form-select" @click.stop v-model.number="formData.open_time">
+                    <option value="">Válasszon időpontot</option>
+                    <option :value="6">6:00</option>
+                    <option :value="7">7:00</option>
+                    <option :value="8">8:00</option>
+                    <option :value="9">9:00</option>
+                    <option :value="10">10:00</option>
+                    <option :value="11">11:00</option>
+                    <option :value="12">12:00</option>
+                    <option :value="13">13:00</option>
+                    <option :value="14">14:00</option>
+                    <option :value="15">15:00</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Zárás ideje</label>
+                  <select class="form-select" @click.stop v-model.number="formData.close_time">
+                    <option value="">Válasszon időpontot</option>
+                    <option :value="14">14:00</option>
+                    <option :value="15">15:00</option>
+                    <option :value="16">16:00</option>
+                    <option :value="17">17:00</option>
+                    <option :value="18">18:00</option>
+                    <option :value="19">19:00</option>
+                    <option :value="20">20:00</option>
+                    <option :value="21">21:00</option>
+                    <option :value="22">22:00</option>
+                    <option :value="23">23:00</option>
+                  </select>
+                </div>
+                </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  Mégse
+                </button>
+                <button type="button" class="btn btn-primary" @click.stop="openningHoursUpdate">
+                  Küldés
+                </button>
+              </div>
             </div>
           </div>
+          </div>
+          </div>
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+ </div>
 </div>
-<div class="card mb-4 shadow-sm col-md-12 col-lg-12 vh=20" id="Naptar">
+      <div class="card mb-4 shadow-sm col-md-12 col-lg-12 vh=20" id="Naptar">
           <vue-cal          
           :events="events || []"
           active-view="day"
