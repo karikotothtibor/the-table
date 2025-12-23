@@ -1,13 +1,19 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, warn } from "vue";
 import 'vue3-carousel/carousel.css';
 import { Carousel, Slide } from 'vue3-carousel';
 import {RouterLink} from 'vue-router';
+import { Alert } from "bootstrap";
 
 
 const reviews = ref();
 //const reviewslogout = ref();
-const user = ref({ id: 0, name: "", email: "" });
+const user = ref([]);
+const me = ref([]);
+const reservation = ref([]);
+const token = ref(localStorage.getItem('token'));
+const reserv = [];
+const openningHours = ref([]);
 
 
 async function getReviews() {
@@ -35,38 +41,144 @@ async function getUser () {
       user.value = data;
      }catch (error) {
       console.error(error);
-      user.value = {id:0, name:"", email:""};
+
+     }
+};
+async function getMe() {
+  if (!token.value) {
+    console.log("Nincs token, user nem tölthető be");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3300/me", {
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      }
+    });
+    
+    console.log("🔍 /me response status:", response.status);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token érvénytelen, töröljük
+        localStorage.removeItem('token');
+        token.value = null;
+        me.value = null;
+        alert("A munkamenet lejárt, kérjük jelentkezz be újra!");
+        return;
+      }
+      throw new Error(`HTTP hiba! státusz: ${response.status}`);
+    }
+    
+    const userData = await response.json();
+    me.value = userData;
+    
+    console.log("Bejelentkezett user:", userData);
+    
+    // User ID automatikus beállítása
+    if (me.value && me.value.id) {
+      formData.value.user_id = me.value.id;
+      console.log("User ID beállítva:", me.value.id);
+    } else {
+      console.warn("User adatok hiányoznak");
+    }
+  } catch (error) {
+    console.error("Hiba a user lekérésekor:", error);
+    alert("Hiba a felhasználói adatok betöltésekor!");
+  }
+}
+
+async function getReservation() {
+    try{
+     const response = await fetch ("http://localhost:3300/reservation");
+      if (!response.ok) throw new Error ("Nem sikerült a foglalást lekérni!");  
+      const data = await response.json();
+      reservation.value = data;
+      
+      for (let index = 0; index < reservation.value.length; index++) {
+      if (reservation.value[index].user_id === me.value.id) {
+        console.log("Van foglalás az userID-hez")
+        reserv.push(reservation.value[index]);
+      } else {
+        console.log("Nincs foglalás az IDhez")
+      };
+    }  console.log(reserv);
+    return reserv ;
+
+     }catch (error) {
+      console.error(error);
+      
      }
 };
 
-onMounted(() => {
-  getReviews();
-  //getReveiwsLogOut();
-  getUser();
+async function getOpenningHours() {
+    try{
+     const response = await fetch ("http://localhost:3300/openninghours");
+      if (!response.ok) throw new Error ("Nem sikerült nyitvatartási táblát lekérni!");  
+      const data = await response.json();
+      openningHours.value = data;
+      console.log("Nyitvatartási adatok",openningHours.value)
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
+onMounted(async() => {
+ await getUser();
+ await getMe();
+ await getReviews();
+ await getReservation()
+ await getOpenningHours() 
 });
 
-const formData = defineModel({
+const formData = ref({
     default:{
-      rating: "",
+      rating: 0,
       comment: "",
       email: "",
       name: "",
     }
 });
 
-function submitReviewForm() {
-  if (user.value.id > 0) {
-    fetch("http://localhost:3300/reviewsadd", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        comment: formData.value.comment,
-        rating: formData.value.rating,
-        user_id: user.value.id, 
+const nameRegex = /^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+(\s+[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+)+$/
+
+async function submitReviewForm() {
+    // 1) Bejelentkezett user
+  if (me.value && me.value.id > 0) {
+    try {
+      await fetch("http://localhost:3300/reviewsadd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          comment: formData.value.comment,
+          rating: formData.value.rating,
+          reservation_id: reserv[reserv.length - 1].id,
+          user_id: me.value.id, 
       }),
     });
-  } else {
-    fetch("http://localhost:3300/reviewslogoutadd", {
+    alert('Köszönjük az értékelést!')
+
+    setTimeout(() => {
+    window.location.reload();
+  }, 1000); // 1 másodperc múlva frissít
+  } catch (err) {
+    console.error('Hiba a reviewadd-nél:', err)
+    alert('Nem sikerült elküldeni az értékelést.')
+    }
+  return
+}
+
+  // 2) NINCS bejelentkezett user → név ellenőrzés + vendég review
+const name = formData.value.name?.trim() || ''
+if (!nameRegex.test(name)) {
+  alert('Adj meg teljes nevet (vezetéknév és keresztnév).')
+  return
+}
+
+try {
+  await fetch("http://localhost:3300/reviewslogoutadd", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -75,9 +187,19 @@ function submitReviewForm() {
         comment: formData.value.comment,
         rating: formData.value.rating,
       }),
-    });
+  })
+  alert('Köszönjük az értékelést!')
+        setTimeout(() => {
+        window.location.reload();
+      }, 1000); // 1 másodperc múlva frissít
+    } catch (err) {
+      console.error('Hiba a reviewslogoutadd-nál:', err)
+      alert('Nem sikerült elküldeni az értékelést.')  
   }
 }
+
+const isLoggedIn = computed(() => !!token.value)
+
 </script>
 
 <template>
@@ -97,9 +219,38 @@ function submitReviewForm() {
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
               <li class="nav-item"><a class="nav-link" href="#home">Főoldal</a></li>
               <li class="nav-item"><a class="nav-link" href="#about">Rólunk</a></li>
-              <li class="nav-item"><a class="nav-link" href="#menu">Étlap</a></li>
+              <li class="nav-item"><RouterLink class="nav-link" to="/etlap">Étlap</RouterLink></li>
               <li class="nav-item"><RouterLink class="nav-link" to="/Reservation">Foglalás</RouterLink></li>
               <li class="nav-item"><a class="nav-link" href="#contact">Kapcsolat</a></li>
+              <li class="nav-item mt-2"><a class="nav-link" href=""><div >
+                <p v-if="isLoggedIn">Be vagy jelentkezve ✅</p>
+                <p v-else>Nem vagy bejelentkezve ❌</p>
+              </div></a></li>
+              
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-user-circle fa-lg "></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                   <li>
+                      <span class="dropdown-item-text small text-muted" v-if="isLoggedIn && user">
+                        Bejelentkezve mint: <strong>{{ me.name }}</strong>
+                      </span>
+                    </li>
+                    
+                  <li><RouterLink class="dropdown-item" to="/user">Profil</RouterLink></li>
+                  <li><a class="dropdown-item" href="#settings">Beállítások</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#logout">Kijelentkezés</a></li>
+                  
+                </ul>
+              </li>
+              <li class="nav-item" v-if="!isLoggedIn">
+            <RouterLink class="nav-link" to="/login">
+              <i class="fa-solid fa-right-to-bracket me-1"></i>
+              Bejelentkezés
+            </RouterLink>
+          </li>
             </ul>
           </div>
         </div>
@@ -110,17 +261,17 @@ function submitReviewForm() {
     <!-- Hero szekció -->
     <section id="home" class="vh-100 d-flex align-items-center bg-dark text-white" style="background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'); background-size:cover;">
       <div class="container text-center py-5">
-        <h1 class="display-3 fw-bold">Az ízek meseszép otthona</h1>
-        <p class="lead mb-4">2004 óta varázsoljuk vissza kedvenc ízeid legfinomabb megtestesülésébe saját, kiemelt receptjeink segítségével.</p>
+        <h1 class="display-3 fw-bold" style="text-shadow: -3px -3px 2px black;">Az ízek meseszép otthona</h1>
+        <p class="lead mb-4" style="text-shadow: -2px -2px 1px black;">2004 óta varázsoljuk vissza kedvenc ízeid legfinomabb megtestesülésébe saját, kiemelt receptjeink segítségével.</p>
         <router-link to="/Login" class="btn btn-info btn-lg rounded-pill text-white">
         Asztalfoglalás
       </router-link>
        
         <div class="row mt-5">
           
-          <div class="col"><span class="h2 text-warning">2004</span><br />év nyitottunk</div>
-          <div class="col"><span class="h2 text-warning">120</span><br />Elégedett vendég naponta</div>
-          <div class="col"><span class="h2 text-warning">100%</span><br />Friss alapanyagok</div>
+          <div class="col"> style="text-shadow: -2px -2px 1px black;"<span class="h2 text-warning">2004</span><br />év nyitottunk</div>
+          <div class="col"> style="text-shadow: -2px -2px 1px black;"<span class="h2 text-warning">120</span><br />Elégedett vendég naponta</div>
+          <div class="col"> style="text-shadow: -2px -2px 1px black;"<span class="h2 text-warning">100%</span><br />Friss alapanyagok</div>
         </div>
       </div>
     </section>
@@ -177,33 +328,40 @@ function submitReviewForm() {
       <div class="container" >
         <h2 class="text-center mb-5 text-info">Az Ön Véleménye</h2>
         <div class="card mx-auto" style="max-width:600px;">
-          <div class="card-body" >
+          <div class="card-body bg-secondary-subtle" >
             <h3 class="card-title">Ossza meg tapasztalatát</h3>
             <form  @submit.prevent="submitReviewForm">
               <div class="mb-3">
                 <label for="name" class="form-label" >Teljes név</label>
-                <input type="text" class="form-control" id="name" required v-model="formData.name" :readonly="user.id > 0">
+                <div v-if="isLoggedIn && user">
+            <input 
+              type="text" 
+              id="name" 
+              class="form-control bg-light" 
+              :value="me.name" 
+              readonly 
+            ><small class="text-success"></small></div>
+              <div v-else>
+                <input type="text" class="form-control" id="name" required v-model="formData.name" > 
+              </div>
               </div>
               <div class="mb-3">
                 <label for="email" class="form-label">Email cím</label>
-                <input type="email" class="form-control" id="email" required v-model="formData.email" :readonly="user.id > 0">
-              </div>
-              <div class="mb-3">
-                <label for="review" class="form-label">Vélemény</label>
-                <textarea id="review" class="form-control" rows="5" required v-model="formData.comment"></textarea>
+                <input type="email" class="form-control" id="email" required v-model="formData.email" :readonly="me.id > 0">
               </div>
                <div class="mb-3" >
                   <div id="rating" class="d-flex mb-2" >
                     <span class="rating-star" v-for="star in 5" 
                     :key="star" 
                     :data-value="star"                    
-                    :class="{'text-warning':formData.rating >= star}"
-                    style="cursor:pointer;font-size:3rem;"
-                    @click="formData.rating=star">&#9733;</span>
-                  </div>
-                  <input type="hidden" name="rating" id="rating-input" required v-model="formData.rating">
+                    :class="{'text-warning': formData.rating >= star}"
+                    style="cursor:pointer;font-size:3rem;color: grey;"
+                    @click="formData.rating=star"
+                    >&#9733;</span>
+                  </div><p class="mt-2 small text-muted">Aktuális értékelés: {{ formData.rating }}</p>
+                  <input type="hidden" name="rating" id="rating-input" required v-if="formData.rating > 0" v-model="formData.rating">
                 </div>
-                
+
               <button type="submit" class="btn btn-info w-100" @click="formData">Vélemény Küldése</button>
             </form>
           </div>
@@ -239,9 +397,13 @@ function submitReviewForm() {
           <div class="row justify-content-center">
             <div class="card mb-3 bg-secondary-subtle review-card"  style="border: 2px solid grey; height:15rem;">
               <div class="card-body d-flex flex-column shadow-bottom-sm" >
-                <h5 class="card-title text-center mb-3 text-info">{{ review.name }}</h5>
-                <h6 class="card-subtitle mb-2 text-body-secondary text-center">{{ review.rating }}</h6>
-                <p class="card-text text-center mb-5 text-info flex-fill">{{ review.comment }}</p>
+                <span class="row align-items-center positon-absolute "><i class="fas fa-user-circle fa-lg"></i></span>
+                <h5 class="card-title text-center mb-3 text-info">{{ review.name }}</h5><h5 class="card-title text-center mb-3 mt-0 text-info" v-for="users in user"  v-show="review.user_id === users.id"  >{{ users.name }}</h5>
+                <h6 class="card-subtitle mb-3 text-center text-warning" style="font-size:1.5rem;">
+                <span v-for="star in 5" :key="star">
+                <span v-if="star <= Number(review.rating)">&#9733;</span>
+                </span></h6>
+                <p class="card-text text-center mb-2 text-info flex-fill overflow-auto rounded-3 bg-info text-dark" style="border: 2px solid grey ; height:5rem;">{{ review.comment }}</p>
                 <p class="card-text text-center mb-0 text-info">{{ review.created_at.split("T")[0] }}</p>
               </div>
             </div>
@@ -277,13 +439,7 @@ function submitReviewForm() {
             <div class="col-auto">
               <h5 class="fw-bold">Nyitvatartás</h5>
               <ul class="list-unstyled">
-                <li>Hétfő: 11:00 - 22:00</li>
-                <li>Kedd: 11:00 - 22:00</li>
-                <li>Szerda: 11:00 - 22:00</li>
-                <li>Csütörtök: 11:00 - 22:00</li>
-                <li>Péntek: 11:00 - 22:00</li>
-                <li>Szombat: 11:00 - 24:00</li>
-                <li>Vasárnap: 11:00 - 23:00</li>
+                <li v-for="openningHour in openningHours" :key="openningHour.id">{{openningHour.day_of_week}}: {{ openningHour.open_time }}:00 - {{openningHour.close_time}}:00</li>
               </ul>
             </div>
           </div>
