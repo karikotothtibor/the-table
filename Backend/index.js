@@ -16,9 +16,10 @@ const prisma = new PrismaClient();
 
 const corsOption = {
     origin: "http://localhost:5173",
-    methods : "GET,POST",
+    methods : "GET,POST,PUT,DELETE",
     alloweeHeaders : "Content-type : application/json, Authorization",
-    optionSuccesStatus: 200
+    optionSuccesStatus: 200,
+    credentials: true
 }
 
 app.use(cors(corsOption));
@@ -54,25 +55,25 @@ function authenticate(req, res, next) {
 }
 
 // Middleware: Admin ellenőrzés
-function isAdmin(req, res, next) {
+/*function isAdmin(req, res, next) {
   if (req.userRole !== "ADMIN") {
     return res.status(403).json({ error: "Nincs jogosultság" })
   }
   next()
-}
+}*/
 
 // Regisztráció
 app.post("/register", async (req,res) => {
-  const { name, email, password } = req.body;
+  const { name, email, phone, password } = req.body;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !phone) {
     return res.status(400).json({ error: "Név, email megadása kötelező"});
   }
 
   try {
   const hashedPassword = await bcrypt.hash(password, 10)
   const newUser = await prisma.users.create({
-    data: { name, email, password: hashedPassword, role: "USER" }, // Átállítani ADMIN vagy USER
+    data: { name, email, phone, password: hashedPassword, role: "USER" }, // Átállítani ADMIN vagy USER
   })
   const token = generateToken(newUser)
   res.status(201).json({ token })
@@ -97,6 +98,7 @@ app.post("/login", async (req, res) => {
 
     const token = generateToken(user)
     res.json({ token })
+    console.log("Bejelentkezve!")
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: "Szerver hiba" })
@@ -104,10 +106,10 @@ app.post("/login", async (req, res) => {
 })
 
 //Felhasználók lekérése - csak adminoknak
-app.get("/users", authenticate, isAdmin, async (req, res) => {
+app.get("/users", async (req, res) => {
   try {
     const users = await prisma.users.findMany({
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, phone: true, role: true },
         // jelszót ne küldjünk vissza 
     });
     res.json(users);
@@ -128,7 +130,7 @@ app.get("/me", authenticate, async (req, res) => {
   try {
     const user = await prisma.users.findUnique({
       where: { id: req.userId },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, phone: true, password: true },
     })
     if (!user) return res.status(404).json({ error: "Felhasználó nem található" })
     res.json(user)
@@ -140,15 +142,15 @@ app.get("/me", authenticate, async (req, res) => {
 
 // Felhasználó nevének módosítása
 app.put("/users/:id", authenticate, async (req, res) => {
-  const { id } = req.params
-  const { name } = req.body
+  const { id } = Number(req.params.id)
+  const { name, email, phone, role } = req.body
 
    if (!name) return res.status(400).json({ error: "Név megadása kötelező" });
 
   try {
     const user = await prisma.users.update({
       where: { id: parseInt(id) },
-      data: { name }
+      data: { name, email, phone, role }
     })
     res.json(user)
   } catch (e) {
@@ -156,7 +158,39 @@ app.put("/users/:id", authenticate, async (req, res) => {
   }
 })
 
-//Ffelhasználó törlése
+//Jelszómódosítás
+app.put("/password/:id", authenticate, async (req, res) => {
+  const id = Number(req.params.id)
+  const {oldPassword, newPassword} = req.body
+
+  try {
+    const user = await prisma.users.findUnique({
+    where: {id}
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: "Felhasználó nem található"})
+    }
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password) //régi jelszó ellenőrzés
+
+  if (!isMatch) {
+    return res.status(400).json({ error: "A jelenlegi jelszó nem megfelelő"})
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10)
+  await prisma.users.update({
+    data: { password: hashedPassword },
+    where: { id: Number(id)},
+  });
+
+  res.json({ success: true })
+} catch (e) {
+    res.status(400).json({ error: "Felhasználó nem található vagy nem sikerült frissíteni "})
+  }
+})
+
+//Felhasználó törlése
 app.delete("/user/:id", authenticate, async (req,res) => {
   const { id} = req.params
   try {
@@ -167,3 +201,28 @@ app.delete("/user/:id", authenticate, async (req,res) => {
   }
 })
 
+//Foglaláslekérdezés
+app.get("/tablestatus", async (req, res) => {
+  try {
+
+    const at = req.query.at;
+    const target = at ? new Date(at) : new Date();
+
+    const data = await prisma.tables.findMany({
+      include: {
+        reservation: {
+          where: {
+            dtime_from: { lte: target },
+            dtime_to: {gt: target}
+          },
+          include: { reservation_status: true }
+        }
+      }
+    });
+
+    res.status(200).json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Hiba a tablestatus lekérdezésénél "})
+  }
+})
