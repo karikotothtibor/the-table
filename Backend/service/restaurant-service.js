@@ -70,15 +70,6 @@ export async function reviewsAdd(rating, comment, created_at, reservation_id, us
     return {message: "Sikeresen létrehozva!"};
 };
 
-export async function reviewDelete(id) {
-    await prisma.reviews.delete({
-        where:{
-            id : Number(id)
-        }
-    })
-    return{message: "Sikeresen törölve!"}
-};
-
 export async function reviewUpdate(id, rating, comment, created_at) {
     await prisma.reviews.update({
         data:{
@@ -118,12 +109,21 @@ export async function reservationAdd(user_id, status_id, table_id, dtime_from, d
 
     await prisma.reservation.create({
         data : {
-           user: {connect:{id:user_id}},
-            table_id: Number(table_id),
-            status_id: Number(status_id),
+           users: {connect:{id:user_id}},
+            tables: {
+                connect: {
+                    id: Number(table_id)
+                }},
+            reservation_status:{
+                connect: {
+                    id: Number(status_id)
+                }
+            },
+
             dtime_from: new Date(dtime_from),
             dtime_to: new Date(dtime_to),
-            number_of_customers: Number(number_of_customers)
+            number_of_customers: Number(number_of_customers),
+            guest_name:guest_name
         }
     })
     return{message:"Sikeresen létrehozva!"}
@@ -187,7 +187,7 @@ export async function tableUpdate(id, capacity) {
 }
 
 //status tábla--------------------------------------------------------------
-export async function statusList(res) {
+export async function statusList(req, res) {
     const data = await prisma.reservation_status.findMany({})
     return data;
 }
@@ -223,16 +223,18 @@ export async function statusDelete(id) {
     return{message: "Sikeresen törölte a státuszt!"}
 }
 //notification tábla--------------------------------------------------------
-export async function notificationList(req) {
+export async function notificationList(req, res) {
     const data = await prisma.notifications.findMany({})
     return data;    
 };
 
-export async function  notificationAdd(message,status,user_id,reservation_id) {
+export async function  
+notificationAdd(message,status,user_id,reservation_id) {
     await prisma.notifications.create({
         data:{
             message: message,
             status: status,
+            sender_id: Number(sender_id),
             user:{
                 connect:{id: user_id}
             },
@@ -250,7 +252,7 @@ export async function notificationDelete(id) {
         id: Number(id)
     }
    })
-   return{message: "Sikersen törölve!"}; 
+   return{message: "Sikeresen törölve!"}; 
 };
 
 export async function notificationUpdate(id,message,status) {
@@ -295,8 +297,8 @@ export async function openningHourUpdate(id, day_of_week, open_time, close_time)
    await prisma.opening_hours.update({
     data:{
         day_of_week: day_of_week,
-        open_time: open_time,
-        close_time: close_time
+        open_time: Number(open_time),
+        close_time: Number(close_time)
     },
     where:{
         id: Number(id)
@@ -324,56 +326,19 @@ export async function reviewLogoutAdd(name, email, comment, rating) {
     return{message: "Sikeresen létrehozva!"};
 };
 
-export async function reviewLogoutDelete(id) {
-    await prisma.reviews_logout.delete({
-        where:{
-            id: Number(id)
-        }
-    })
-    return{message: "Sikeresen törölve!"}
-};
+export async function deleteReviewById(id) {
+  const reviewId = Number(id)
 
-export async function reviewLogoutUpdate(id, name, email, comment, rating, created_at) {
-    await prisma.reviews_logout.update({
-        data:{
-            name: name,
-            email: email,
-            comment: comment,
-            rating: Number(rating),
-            created_at: created_at
-        },
-        where:{
-            id: Number(id)
-        }
-    })
-    return{message: "Sikeresen frissitve!"}
-};
+  const deletedMain = await prisma.reviews.deleteMany({
+    where: { id: reviewId },
+  })
 
-export async function reviewLogoutList(req, res) {
-    const data = await prisma.reviews_logout.findMany({})
-    return data;
-};
+  const deletedLogout = await prisma.reviews_logout.deleteMany({
+    where: { id: reviewId },
+  })
 
-export async function reviewLogoutAdd(name, email, comment, rating) {
-    await prisma.reviews_logout.create({
-        data:{
-            name: name,
-            email: email,
-            comment: comment,
-            rating: Number(rating),
-            //created_at: created_at,
-        }
-    })
-    return{message: "Sikeresen létrehozva!"};
-};
-
-export async function reviewLogoutDelete(id) {
-    await prisma.reviews_logout.delete({
-        where:{
-            id: Number(id)
-        }
-    })
-    return{message: "Sikeresen törölve!"}
+  return deletedMain.count + deletedLogout.count
+  
 };
 
 export async function reviewLogoutUpdate(id, name, email, comment, rating, created_at) {

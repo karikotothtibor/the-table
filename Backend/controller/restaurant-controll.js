@@ -1,13 +1,43 @@
 
 import express from "express";
-import { reviewsList, reviewsAdd, UserAdd, UserList, UserDelete, UserUpdate, reviewLogoutList, reviewLogoutAdd } from "../service/restaurant-service.js";
+import { reviewsList, 
+    reviewsAdd,
+    reviewsUpdate, 
+    //UserAdd, 
+    //UserList, 
+    //UserDelete, 
+    //UserUpdate, 
+    reviewLogoutList, 
+    reviewLogoutAdd,
+    reviewLogoutUpdate,
+    deleteReviewById, 
+    reservationList, 
+    reservationAdd, 
+    reservationDelete, 
+    reservationUpdate,
+    notificationAdd,
+    notificationDelete,
+    notificationList,
+    notificationUpdate,
+    openningHourAdd,
+    openningHourDelete,
+    openningHourList,
+    openningHourUpdate,
+    statusAdd,
+    statusDelete,
+    statusList,
+    statusUpdate,
+    tableAdd,
+    tableDelete,
+    tableList,
+    tableUpdate} from "../service/restaurant-service.js";
 
 const router = express.Router();
 
 
 // user tábla---------------------------------------------------------------
 
-router.get ("/user",async (req, res) => {
+/*router.get ("/user",async (req, res) => {
     try {
        const data = await UserList();
        res.status(200).json(data); 
@@ -15,9 +45,9 @@ router.get ("/user",async (req, res) => {
         console.log(error);
         res.status(400).json({message: error});
     }
-});
+});*/
 
-router.post ("/useradd", async (req, res) => {
+/*router.post ("/useradd", async (req, res) => {
     const {name, email, phone, password} = req.body;
     try {
         const data = await UserAdd(name, email, phone, password);
@@ -27,9 +57,9 @@ router.post ("/useradd", async (req, res) => {
         res.status(400).json({message: error});
     };
     
-});
+});*/
 
-router.delete("/user/:id", async (req, res) => {
+/*router.delete("/user/:id", async (req, res) => {
     const user_id = req.params.id
     try {
         const data = await UserDelete(user_id);
@@ -49,7 +79,7 @@ router.put("/user", async (req, res) => {
         console.log(error);
         res.status(400).json({message:error});
     }
-});
+});*/
 
 //reservation tábla----------------------------------------------------------
 
@@ -258,17 +288,6 @@ router.post("/reviewadd",async (req, res) => {
     }
 });
 
-router.delete("/review/:id", async (req, res) => {
-    const id = req.params.id
-    try {
-        const data = await reviewsDelete(id);
-        res.status(200).json(data);
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({message:error});
-    };
-});
-
 router.put("/review", async (req, res) => {
     const {id, rating, comment, created_at} = req.body;
     try {
@@ -280,27 +299,51 @@ router.put("/review", async (req, res) => {
     }
 });
 
-router.get("/review",async (req, res) => {
+//openning hours tábla------------------------------------------------------
+router.get ("/openninghours",async (req, res) => {
     try {
-        const data = await reviewsList();
-        res.status(200).json(data);
+       const data = await openningHourList();
+       res.status(200).json(data); 
     } catch (error) {
         console.log(error);
         res.status(400).json({message: error});
     }
 });
 
-router.post("/reviewsadd",async (req, res) => {
-    const {rating, comment, created_at} = req.body;
+router.post ("/openninghours", async (req, res) => {
+    const {day_of_week, open_time, close_time} = req.body;
     try {
-        const data = await reviewsAdd(rating, comment, created_at,);
+        const data = await openningHourAdd(day_of_week, open_time, close_time);
         res.status(201).json(data);
     } catch (error) {
         console.log(error);
         res.status(400).json({message: error});
+    };
+    
+});
+
+router.delete("/openninghours/:id", async (req, res) => {
+    const id = req.params.id
+    try {
+        const data = await openningHourDelete(id);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    };
+});
+
+router.put("/openninghours", async (req, res) => {
+    const {id, day_of_week, open_time, close_time} = req.body;
+    try {
+        const data = await openningHourUpdate(id, day_of_week, open_time, close_time);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
     }
-})
-//openning hours tábla------------------------------------------------------
+});
+
 //reviews logout tábla------------------------------------------------------
 
 router.get("/reviewslogoutList", async (req, res) => {
@@ -323,4 +366,37 @@ router.post("/reviewslogoutadd", async (req, res) => {
         res.status(400).json({message:error});
     };
 });
+
+router.delete("/reviews/:id" , async(req, res) => {
+    const { id } = req.params
+  try {
+    
+    if (!id) {
+      return res.status(400).json({ error: 'Hiányzó id paraméter.' })
+    }
+
+    const totalDeleted  = await deleteReviewById(id)
+
+    if (totalDeleted === 0) {
+      return res.status(404).json({ error: 'Review nem található.' })
+    }
+
+    return res.json({ ok: true, deleted: totalDeleted })
+  } catch (err) {
+    console.error('Hiba a reviewDelete-ben:', err)
+    res.status(500).json({ error: 'Nem sikerült törölni a véleményt.' })
+  }
+});
+
+router.put("/reviewslogout", async (req, res) => {
+    const {id, name, email, comment, rating, created_at} = req.body;
+    try {
+        const data = await reviewLogoutUpdate(id, name, email, comment, rating, created_at);
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message:error});
+    }
+});
+
 export {router as restaurantRouter};
