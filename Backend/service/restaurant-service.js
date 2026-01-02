@@ -60,10 +60,10 @@ export async function reviewsAdd(rating, comment, created_at, reservation_id, us
             comment: comment,
             created_at: created_at,
             user: {
-                connect: { id: user_id }
+                connect: { id: Number(user_id) }
             },
             reservation:{
-                connect: { id: reservation_id}                 
+                connect: { id: Number(reservation_id)}                 
                 }
             }
     });
@@ -229,7 +229,7 @@ export async function notificationList(req, res) {
 };
 
 export async function  
-notificationAdd(message,status,user_id,reservation_id) {
+notificationAdd(message,status,user_id,reservation_id,sender_id) {
     await prisma.notifications.create({
         data:{
             message: message,
