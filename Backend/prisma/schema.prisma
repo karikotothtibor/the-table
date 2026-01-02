@@ -99,17 +99,18 @@ model reviews_logout {
 enum reservation_status_status {
   szabad
   foglalt
-  torolve             @map("törölve")
+  torolve             
   EMPTY_ENUM_VALUE    @map("")
 }
 
 enum users_role {
   USER
   ADMIN
+  LETILTVA
 }
 enum notifications_status {
-  ELKULDVE            @map("elküldve")
+  ELKULDVE            
   SIKERTELEN
-  VARAKOZAS           @map("várakozás")
-  EMPTY               @map("")
+  VARAKOZAS           
+  EMPTY_ENUM_VALUE               @map("")
 }
