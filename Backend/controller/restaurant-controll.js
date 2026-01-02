@@ -280,7 +280,7 @@ router.get("/review",async (req, res) => {
 router.post("/reviewadd",async (req, res) => {
     const {rating, comment, created_at} = req.body;
     try {
-        const data = await reviewsAdd(rating, comment, created_at,);
+        const data = await reviewsAdd(rating, comment, user_id, reservation_id,);
         res.status(201).json(data);
     } catch (error) {
         console.log(error);
