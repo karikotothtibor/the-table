@@ -293,10 +293,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineEmits } from "vue";
+import { ref, onMounted, computed, watch} from "vue";
 
-const user = ref(null);
+
+
+
+const users = ref([]);
+const me = ref([]);
+const reservations = ref([]);
+const messages = ref([]);
+const activeTab = ref('section-nev');
 const emit = defineEmits(["logged-out"]);
+const currentDate = ref('');
+const token = ref(localStorage.getItem('token'));
+const passwordNew = ref('');
+const passwordConfirm = ref('');
+const passwordOld = ref('')
+const selected = ref(1);
+const selectedUser = ref(null);
+const notifications = ref([]);
+const messageText = ref('');
+const showModal = ref(false);
+
 
 const fetchMe = async () => {
   try {
@@ -305,34 +323,134 @@ const fetchMe = async () => {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
-    if (!res.ok) {
+    /*if (!res.ok) {
       emit("logged-out");
       return;
-    }
-    user.value = await res.json();
+    }*/
+    if (!res.ok) {
+      
+        // Token érvénytelen, töröljük
+        localStorage.removeItem('token');
+        token.value = null;
+        me.value = null;
+        alert("A munkamenet lejárt, kérjük jelentkezz be újra!");
+        return;
+      }
+    me.value = await res.json();
+    console.log("Me adatok",me.value)
   } catch (err) {
     console.error("Nem sikerült lekérni a profilt:", err);
   }
 };
 
-const update = async () => {
+async function getUser() {
+    try{
+     const res = await fetch ("http://localhost:3300/user");
+      if (!res.ok) throw new Error ("Nem sikerült a felhasználót lekérni!");  
+      const data = await res.json();
+      users.value = data;
+      console.log("user adatok",users.value)
+     }catch (error) {
+      console.error(error);
+      users.value = {id:0, name:"", email:""};
+     }
+};
+
+async function getReservation() {
+    try{
+     const response = await fetch ("http://localhost:3300/reservation");
+      if (!response.ok) throw new Error ("Nem sikerült a rendelést lekérni!");  
+      const data = await response.json();
+      reservations.value = data;
+        console.log("Reservation adatok:",reservations.value);
+       }catch (error) {
+      console.error(error);
+      
+     }
+};
+
+async function getNotification() {
+    try{
+     const response = await fetch ("http://localhost:3300/notification");
+      if (!response.ok) throw new Error ("Nem sikerült üzenetet lekérni!");  
+      const data = await response.json();
+      notifications.value = data;
+      console.log("Üzenet adatok",notifications.value)
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
+onMounted(async()=>{
+  await fetchMe();
+  await getReservation();
+  await getNotification();
+  await getUser();
+});
+
+const updateUsers = async () => {
   try {
-    await fetch(`http://localhost:3300/users/${user.value.id}`, {
+    await fetch(`http://localhost:3300/users/${me.value.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      body: JSON.stringify({ name: user.value.name }),
+      body: JSON.stringify({ name: me.value.name,
+        email : me.value.email,
+        phone : me.value.phone
+       }),
     });
+    alert('Profil adatok sikeresen frissítve!');
   } catch (err) {
     console.error("Nem sikerült frissíteni:", err);
   }
 };
 
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/
+
+const updatePassword = async () => {
+  try {
+    if (!strongPasswordRegex.test(passwordNew.value)) {
+        alert('A jelszónak legalább 8 karakterből kell állnia, tartalmaznia kell kis- és nagybetűt, számot és speciális karaktert.')
+        return};    
+    if (passwordNew.value !== passwordConfirm.value) {
+        alert('A két jelszó nem egyezik!');
+        return;}
+    if (passwordNew.value.length < 8) {
+        alert('A jelszónak legalább 8 karakter hosszúnak kell lennie!');
+        return;
+    }
+  
+    const response = await fetch(`http://localhost:3300/password/${me.value.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ 
+        oldPassword: passwordOld.value,
+        newPassword: passwordNew.value 
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Hiba ${response.status}: ${data.error || 'Ismeretlen hiba'}`)
+    }    
+    alert('Jelszó sikeresen megváltoztatva!');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (err) {
+    console.error("Nem sikerült frissíteni:", err);
+    alert('Hiba történt a jelszó frissítésekor!')
+  }
+};
+
+
 const remove = async () => {
   try {
-    await fetch(`http://localhost:3300/user/${user.value.id}`, {
+    await fetch(`http://localhost:3300/user/${me.value.id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -345,12 +463,97 @@ const remove = async () => {
   }
 };
 
-const logout = () => {
-  localStorage.removeItem("token");
-  emit("logged-out");
+const cancelReservation = async () => {
+  if (confirm('Biztosan le szeretné mondani ezt a foglalást?')){
+  try {
+    await fetch(`http://localhost:3300/reservation/${reservations.value.id}`, {
+      method: "DELETE"
+    });alert('Foglalás sikeresen törölve!');
+  } catch (err) {
+    console.error("Nem sikerült törölni:", err);
+  }
+}
+}
+
+function openModal() {
+  const modal = bootstrap.Modal.getOrCreateInstance('#messageModal')
+  modal.show()
+  showModal.value = true
+}
+
+
+async function messageAdd() {
+  if ( !messageText.value.trim()) {
+    alert('Kérem tölse ki az összes mezőt!');
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3300/notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: 5,
+        reservation_id: 1,
+        message: messageText.value.trim(),
+        status: "ELKULDVE",
+        sender_id: me.value.id
+      })
+    });
+
+    if (response.ok) {
+      alert('Üzenet elküldve!');
+      const modal = bootstrap.Modal.getOrCreateInstance('#messageModal')
+      modal.hide();
+      showModal.value = false;
+      selectedUser.value = null
+      selectedReservation.value = null
+      messageText.value = ''
+      await getNotification(); // Frissítjük a listát
+    } else {
+      alert('Hiba az üzenet küldésekor!');
+    }
+  } catch (error) {
+    console.error('Üzenetküldés hiba:', error);
+    alert('Hálózati hiba!');
+  }
 };
 
-onMounted(fetchMe);
+
+
+const setActiveTab = (tab) => {
+          activeTab.value = tab;
+        };        
+
+function selectedReservation(reservation){
+  selected.value = reservations;
+  reservations.value.id=0;
+};
+
+currentDate.value = new Date().toISOString();
+
+const logout = () => {
+  localStorage.removeItem("token");
+  if (confirm('Biztosan ki szeretne jelentkezni?')) {
+            alert('Sikeres kijelentkezés!');}
+  emit("logged-out");
+      setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+};
+
+watch(token, (newToken) => {
+  if (newToken) {
+    localStorage.setItem('token', newToken)
+    fetchMe(); // Automatikusan lekérjük a user adatokat token változásakor
+  } else {
+    localStorage.removeItem('token')
+    me.value = null;
+  }
+})
+
+const isLoggedIn = computed(() => !!token.value);
+
 </script>
 
 

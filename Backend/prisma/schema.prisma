@@ -23,9 +23,9 @@ model notifications {
 
 model opening_hours {
   id          Int                       @id @default(autoincrement())
-  day_of_week opening_hours_day_of_week
-  open_time   DateTime                  @db.Time(0)
-  close_time  DateTime                  @db.Time(0)
+  day_of_week String @db.Text
+  open_time   Int
+  close_time  Int
 }
 
 model reservation {
@@ -36,6 +36,7 @@ model reservation {
   dtime_from          DateTime           @db.DateTime(0)
   dtime_to            DateTime           @db.DateTime(0)
   number_of_customers Int
+  guest_name          String             @db.VarChar(255)
   notifications       notifications[]
   users               users              @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "reservation_ibfk_5")
   tables              tables             @relation(fields: [table_id], references: [id], onUpdate: Restrict, map: "reservation_ibfk_6")
@@ -59,7 +60,7 @@ model reviews {
   user_id        Int?
   rating         Int         @db.TinyInt
   comment        String      @db.Text
-  created_at     DateTime    @db.DateTime(0)
+  created_at     DateTime    @default(now()) @db.DateTime(0)
   users          users?      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "reviews_ibfk_3")
   reservation    reservation @relation(fields: [reservation_id], references: [id], onDelete: Cascade, map: "reviews_ibfk_4")
 
@@ -79,6 +80,7 @@ model users {
   email         String          @unique(map: "email") @db.VarChar(255)
   phone         String          @db.VarChar(20)
   password      String          @db.VarChar(255)
+  role          users_role      @default(USER)
   notifications notifications[]
   reservation   reservation[]
   reviews       reviews[]
@@ -93,26 +95,22 @@ model reviews_logout {
   created_at DateTime @default(now()) @db.Date
 }
 
-enum opening_hours_day_of_week {
-  H_tf_     @map("Hétfő")
-  Kedd
-  Szerda
-  Cs_t_rt_k @map("Csütörtök")
-  P_ntek    @map("Péntek")
-  Szombat
-  Vas_rnap  @map("Vasárnap")
+enum users_role {
+  USER
+  ADMIN
+  LETILTVA
 }
 
 enum reservation_status_status {
   szabad
   foglalt
-  t_r_lve          @map("törölve")
+  torolve
   EMPTY_ENUM_VALUE @map("")
 }
 
 enum notifications_status {
-  elk_ldve         @map("elküldve")
-  sikertelen
-  v_rakoz_s        @map("várakozás")
+  ELKULDVE
+  SIKERTELEN
+  VARAKOZAS
   EMPTY_ENUM_VALUE @map("")
 }
