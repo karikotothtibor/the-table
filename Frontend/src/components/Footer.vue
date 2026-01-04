@@ -40,7 +40,9 @@ defineProps({
             <h5 class="fw-bold text-outline">Nyitvatartás</h5>
             <ul class="list-unstyled">
               <li v-for="openningHour in openningHours" :key="openningHour.id">
-                {{ openningHour.day_of_week }}: {{ openningHour.open_time }}:00 - {{ openningHour.close_time }}:00
+                {{ openningHour.day_of_week }}:
+                <span v-if="openningHour.open_time === 0 && openningHour.close_time === 0">Zárva</span>
+                <span v-else>{{ openningHour.open_time }}:00 - {{ openningHour.close_time }}:00</span> 
               </li>
             </ul>
           </div>
