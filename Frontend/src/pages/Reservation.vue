@@ -237,7 +237,7 @@ async function reservationAdd() {
     return;
   }
     try {
-    const res = await fetch('http://localhost:3300/reservationadd', {
+    const res = await fetch('http://localhost:3300/reservation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -305,6 +305,36 @@ watch([date, time, timeOffSet], () => {
   }
 });
 
+function selectedAsztal(tables){
+  selected.value = tables;
+  formData.value.table_id=tables.id;
+  modalShow('Asztal kiválasztva!', 'success');
+};
+
+onMounted(async()=>{
+  await getMe();
+  //if(token.value){getMe()};
+  if (me.value.role !== 'USER'|| 'ADMIN' && !isLoggedIn) {
+  router.replace('/')};
+  await getOpenningHours();
+  await getUser(); 
+  await getTable();
+  await getStatus();
+  await getTableStatus();
+  await getReservation();
+});
+
+// Kijelentkezés esemény kezelése
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  isLoggedIn.value = false;
+  token.value = null;
+  modalShow('Sikeresen kijelentkeztél!', 'success');
+  setTimeout(() => {
+      window.location.reload()
+    }, 1500)
+};
+
 const selectedDateTime = computed(() => {
   if (!date.value || !time.value) return null
   // "2025-12-01T18:00:00"
@@ -318,14 +348,6 @@ const selectedDayName = computed(() => {
   return dateObj.toString().charAt(0).toUpperCase() + dateObj.toString().slice(1);
   
 });
-
-function selectedAsztal(tables){
-  selected.value = tables;
-  formData.value.table_id=tables.id;
-  modalShow('Asztal kiválasztva!', 'success');
-};
-
-
 
 const dtime_from = computed(() => {
   const result = `${date.value}T${time.value}`;
@@ -367,39 +389,9 @@ const dtime_to = computed(() => {
 
 const isLoggedIn = computed(() => !!token.value)
 
-onMounted(async()=>{
-  await getMe();
-  //if(token.value){getMe()};
-  if (me.value.role !== 'USER'|| 'ADMIN' && !isLoggedIn) {
-  router.replace('/')};
-  await getOpenningHours();
-  await getUser(); 
-  await getTable();
-  await getStatus();
-  await getTableStatus();
-  await getReservation();
-});
-
-// Kijelentkezés esemény kezelése
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  isLoggedIn.value = false;
-  token.value = null;
-  modalShow('Sikeresen kijelentkeztél!', 'success');
-  setTimeout(() => {
-      window.location.reload()
-    }, 1500)
-};
-
-
-
 currentDate.value = new Date();
 currentDateCut.value = new Date().toISOString().split("T")[0];
 console.log( currentDateCut.value);
-
-//const yesterday = new Date(currentDateCut.value);
-//yesterday.setDate(yesterday.getDate()-1);
-//currentDateCut.value = yesterday.toISOString().split("T")[0];
 
 currentTime.value = new Date().toLocaleTimeString('hu-HU', { 
   hour: '2-digit', 
@@ -455,35 +447,6 @@ const timeSlots = computed(() => {
     slots.push(`${hour}:00`);
   }
   return slots;
-});
-
-const closeHour = computed(() => {
-  if (!selectedDayName.value || !openningHours.value?.length) return '';
-  
-  const dayRow = openningHours.value.find(
-    oh => oh.day_of_week === selectedDayName.value
-  );
- if (!dayRow || !dayRow.close_time) return '';
-
-  const closeTimeStr = String(dayRow.close_time).padStart(2, '0');
-  return closeTimeStr;
-});
-
-const maxTimeOffset = computed(() => {
-  if (!selectedDayName.value || !openningHours.value?.length) return '2:00';
-  
-  const dayRow = openningHours.value.find(
-    oh => oh.day_of_week === selectedDayName.value
-  );
-  if (!dayRow || !dayRow.close_time) return '2:00';
-  
-  const closeHourNum = parseInt(dayRow.close_time);
-  const selectedHour = time.value ? parseInt(time.value.split(':')[0]) : 0;
-  
-  if (isNaN(closeHourNum) || isNaN(selectedHour)) return '2:00';
-  // Pl. 18:00-ra max 4 óra (22-ig), ha close_time=22
-  const maxHours = closeHourNum - selectedHour;
-  return `${Math.max(0, Math.min(maxHours, 2))}:00`; // max 2 óra limit
 });
 
 const timeOffsetOptions = computed(() => {
@@ -635,7 +598,8 @@ const formatTime = (dateString) => {
           id="name" 
           class="form-control bg-light" 
           :value="me.name" 
-          readonly>
+          readonly
+          autocomplete="name">
           <small class="text-success">
             <i class="fas fa-check-circle"></i> 
             A neved automatikusan betöltődött: <strong>{{ me.name }}</strong>
