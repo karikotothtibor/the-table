@@ -220,6 +220,8 @@ app.post("/login", async (req, res) => {
  *                   role:
  *                     type: string
  *                     example: USER
+ *       409:
+ *         description: Email már létezik
  *       500:
  *         description: Szerver hiba
  */
@@ -278,8 +280,6 @@ app.get("/users", async (req, res) => {
  *                 role:
  *                   type: string
  *                   example: USER
- *       401:
- *         description: Token hiányzik vagy érvénytelen
  *       404:
  *         description: Felhasználó nem található
  *       500:
@@ -335,12 +335,8 @@ app.get("/me", authenticate, async (req, res) => {
  *                 role:
  *                   type: string
  *                   example: USER
- *       401:
- *         description: Token hiányzik vagy érvénytelen
- *       404:
- *         description: Felhasználó nem található
- *       500:
- *         description: Szerver hiba
+ *       400:
+ *         description: Felhasználó nem található vagy nem sikerült frissíteni
  */
 
 // Felhasználó nevének,telefonszámának,email módosítása
@@ -405,8 +401,6 @@ app.put("/users/:id", authenticate, async (req, res) => {
  *         description: Token hiányzik vagy érvénytelen
  *       404:
  *         description: Felhasználó nem található
- *       500:
- *         description: Szerver hiba
  */
 
 //Jelszómódosítás
@@ -463,10 +457,6 @@ app.put("/password/:id", authenticate, async (req, res) => {
  *         description: Felhasználó sikeresen törölve
  *       400:
  *         description: Felhasználó nem található vagy törlés sikertelen
- *       401:
- *         description: Token hiányzik vagy érvénytelen
- *       500:
- *         description: Szerver hiba
  */
 
 //Felhasználó törlése
