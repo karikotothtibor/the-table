@@ -20,6 +20,7 @@ const prisma = new PrismaClient();
     });
     return {message: "Sikeresen létrehozva!"};  
 };
+
 export async function UserDelete(id) {
     await prisma.users.findFirst({
         where:{
@@ -28,6 +29,7 @@ export async function UserDelete(id) {
     })
     return{message: "A Felhasználó sikeresen eltávolítva!"}
 };
+
 export async function UserUpdate(id,name, phone, email, password) {
     await prisma.users.update({
         data: {
@@ -49,8 +51,7 @@ export async function UserUpdate(id,name, phone, email, password) {
 export async function reviewsList(req, res) {
     const data = await prisma.reviews.findMany({
 
-    });
-    return data;
+    });return data;
 };
 
 export async function reviewsAdd(rating, comment, user_id, reservation_id) {
@@ -58,8 +59,8 @@ export async function reviewsAdd(rating, comment, user_id, reservation_id) {
         data:{
             rating: Number(rating),
             comment: comment,
-            created_at: created_at,
-            user: {
+            //created_at: created_at,
+            users: {
                 connect: { id: Number(user_id) }
             },
             reservation:{
@@ -70,7 +71,8 @@ export async function reviewsAdd(rating, comment, user_id, reservation_id) {
     return {message: "Sikeresen létrehozva!"};
 };
 
-export async function reviewUpdate(id, rating, comment, created_at) {
+
+export async function reviewsUpdate(id, rating, comment, created_at) {
     await prisma.reviews.update({
         data:{
             rating: Number(rating),
@@ -98,14 +100,14 @@ export async function reservationAdd(user_id, status_id, table_id, dtime_from, d
                 id: Number(table_id),
             }
     })
-    if (!tableID) throw new console.error("Asztal nem található!");
+    if (!tableID) throw console.error("Asztal nem található!");
     
     const statusID = await prisma.reservation_status.findUnique({
         where:{
             id: Number(status_id)
         }
     })
-    if (!statusID) throw new console.error("Nincs a foglaláshoz státusz!");
+    if (!statusID) throw console.error("Nincs a foglaláshoz státusz!");
 
 
     await prisma.reservation.create({
@@ -120,7 +122,7 @@ export async function reservationAdd(user_id, status_id, table_id, dtime_from, d
                     id: Number(status_id)
                 }
             },
-
+            
             dtime_from: new Date(dtime_from),
             dtime_to: new Date(dtime_to),
             number_of_customers: Number(number_of_customers),
@@ -161,7 +163,7 @@ export async function tableList(req, res) {
 
 export async function tableAdd(capacity) {
     await prisma.tables.create({
-        capacity: Number(capacity)
+        data:{capacity: Number(capacity),}
     })
     return{message: "Sikeresen létrehozva!"}
 }
@@ -229,17 +231,16 @@ export async function notificationList(req, res) {
     return data;    
 };
 
-export async function  
-notificationAdd(message,status,user_id,reservation_id,sender_id) {
+export async function  notificationAdd(message,status,user_id,reservation_id,sender_id) {
     await prisma.notifications.create({
         data:{
             message: message,
             status: status,
             sender_id: Number(sender_id),
-            user:{
-                connect:{id: user_id}
+            users:{
+                connect:{id:user_id}
             },
-            reservation_id:{
+            reservation:{
                 connect:{id: reservation_id}
             }
         }
@@ -253,7 +254,7 @@ export async function notificationDelete(id) {
         id: Number(id)
     }
    })
-   return{message: "Sikeresen törölve!"}; 
+   return{message: "Sikersen törölve!"}; 
 };
 
 export async function notificationUpdate(id,message,status) {
@@ -277,7 +278,7 @@ const adat = await prisma.opening_hours.findMany({})
 
 export async function openningHourAdd(day_of_week, open_time, close_time) {
     await prisma.opening_hours.create({
-        adat:{
+        data:{
             day_of_week: day_of_week,
             open_time: open_time,
             close_time: close_time
