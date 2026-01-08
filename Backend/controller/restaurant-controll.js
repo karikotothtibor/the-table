@@ -1,9 +1,9 @@
 
 import express from "express";
-import { reviewsList, 
+import { reviewsList,
     reviewsAdd,
-    reviewsUpdate, 
-    //UserAdd, 
+    reviewsUpdate,
+    //UserAdd,
     //UserList, 
     //UserDelete, 
     //UserUpdate, 
@@ -30,7 +30,8 @@ import { reviewsList,
     tableAdd,
     tableDelete,
     tableList,
-    tableUpdate} from "../service/restaurant-service.js";
+    tableUpdate,
+    checkEmail} from "../service/restaurant-service.js";
 
 const router = express.Router();
 
@@ -80,7 +81,7 @@ router.put("/user", async (req, res) => {
         res.status(400).json({message:error});
     }
 });*/
-//reservation tábla----------------------------------------------------------
+//reservation tábla---------------------------------------------------------
 router.get ("/reservation",async (req, res) => {
     try {
        const data = await reservationList();
@@ -92,9 +93,9 @@ router.get ("/reservation",async (req, res) => {
 });
 
 router.post ("/reservationadd", async (req, res) => {
-    const {user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers} = req.body;
+    const {user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers,guest_name} = req.body;
     try {
-        const data = await reservationAdd(user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers);
+        const data = await reservationAdd(user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers,guest_name);
         res.status(201).json(data);
     } catch (error) {
         console.log(error);
@@ -124,7 +125,7 @@ router.put("/reservation", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-//table tábla-------------------------------------------------------------
+//table tábla---------------------------------------------------------------
 router.get ("/table",async (req, res) => {
     try {
        const data = await tableList();
@@ -143,7 +144,8 @@ router.post ("/tableadd", async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(400).json({message: error});
-    };  
+    };
+    
 });
 
 router.delete("/table/:id", async (req, res) => {
@@ -211,8 +213,8 @@ router.put("/status", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-//notification tábla--------------------------------------------------------------------
-router.get ("/notificatiom",async (req, res) => {
+//notification tábla--------------------------------------------------------
+router.get ("/notification",async (req, res) => {
     try {
        const data = await notificationList();
        res.status(200).json(data); 
@@ -223,9 +225,9 @@ router.get ("/notificatiom",async (req, res) => {
 });
 
 router.post ("/notification", async (req, res) => {
-    const {message,status,user_id,reservation_id} = req.body;
+    const {message,status,user_id,reservation_id,sender_id} = req.body;
     try {
-        const data = await notificationAdd(message,status,user_id,reservation_id);
+        const data = await notificationAdd(message,status,user_id,reservation_id,sender_id);
         res.status(201).json(data);
     } catch (error) {
         console.log(error);
@@ -235,7 +237,7 @@ router.post ("/notification", async (req, res) => {
 });
 
 router.delete("/notification/:id", async (req, res) => {
-    const id = req.params.id
+    const id = Number(req.params.id)
     try {
         const data = await notificationDelete(id);
         res.status(200).json(data);
@@ -255,7 +257,7 @@ router.put("/notification", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-//rewievs tábla---------------------------------------------------------------
+//rewievs tábla-------------------------------------------------------------
 
 router.get("/review",async (req, res) => {
     try {
@@ -270,7 +272,7 @@ router.get("/review",async (req, res) => {
 router.post("/reviewadd",async (req, res) => {
     const {rating, comment, user_id, reservation_id } = req.body;
     try {
-        const data = await reviewsAdd(rating, comment, user_id, reservation_id,);
+        const data = await reviewsAdd(rating, comment, user_id, reservation_id);
         res.status(201).json(data);
     } catch (error) {
         console.log(error);
