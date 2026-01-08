@@ -80,9 +80,7 @@ router.put("/user", async (req, res) => {
         res.status(400).json({message:error});
     }
 });*/
-
 //reservation tábla----------------------------------------------------------
-
 router.get ("/reservation",async (req, res) => {
     try {
        const data = await reservationList();
@@ -126,9 +124,7 @@ router.put("/reservation", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-
 //table tábla-------------------------------------------------------------
-
 router.get ("/table",async (req, res) => {
     try {
        const data = await tableList();
@@ -147,8 +143,7 @@ router.post ("/tableadd", async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(400).json({message: error});
-    };
-    
+    };  
 });
 
 router.delete("/table/:id", async (req, res) => {
@@ -172,9 +167,7 @@ router.put("/table", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-
 //status tábla--------------------------------------------------------------
-
 router.get ("/status",async (req, res) => {
     try {
        const data = await statusList();
@@ -218,9 +211,7 @@ router.put("/status", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-
 //notification tábla--------------------------------------------------------------------
-
 router.get ("/notificatiom",async (req, res) => {
     try {
        const data = await notificationList();
@@ -264,7 +255,6 @@ router.put("/notification", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-
 //rewievs tábla---------------------------------------------------------------
 
 router.get("/review",async (req, res) => {
@@ -278,7 +268,7 @@ router.get("/review",async (req, res) => {
 });
 
 router.post("/reviewadd",async (req, res) => {
-    const {rating, comment, created_at} = req.body;
+    const {rating, comment, user_id, reservation_id } = req.body;
     try {
         const data = await reviewsAdd(rating, comment, user_id, reservation_id,);
         res.status(201).json(data);
@@ -287,6 +277,7 @@ router.post("/reviewadd",async (req, res) => {
         res.status(400).json({message: error});
     }
 });
+
 
 router.put("/review", async (req, res) => {
     const {id, rating, comment, created_at} = req.body;
@@ -298,7 +289,6 @@ router.put("/review", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-
 //openning hours tábla------------------------------------------------------
 router.get ("/openninghours",async (req, res) => {
     try {
@@ -343,7 +333,6 @@ router.put("/openninghours", async (req, res) => {
         res.status(400).json({message:error});
     }
 });
-
 //reviews logout tábla------------------------------------------------------
 
 router.get("/reviewslogoutList", async (req, res) => {
@@ -396,6 +385,20 @@ router.put("/reviewslogout", async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(400).json({message:error});
+    }
+});
+
+router.post("/check-email", async (req, res) => {
+    const { email } = req.body;
+    try {
+        const emailExists = await checkEmail(email);
+        if (emailExists) {
+            return res.status(400).json({ message: "Ez az e-mail cím már foglalt!" });
+        }
+        return res.status(200).json({ message: "Az e-mail cím elérhető." });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Hiba történt az e-mail ellenőrzése során!" });
     }
 });
 
