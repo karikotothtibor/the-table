@@ -4,12 +4,12 @@ const prisma = new PrismaClient();
 
 // user tábla---------------------------------------------------------------
 
-export async function UserList(req,res) {
-    const data = await prisma.users.findMany({})
-    return data;
-};
+//export async function UserList(req,res) {
+//    const data = await prisma.users.findMany({})
+//    return data;
+//};
 
-export async function UserAdd(name, email, phone, password) {
+/*export async function UserAdd(name, email, phone, password) {
     await prisma.users.create({
         data:{
             name: name,
@@ -41,7 +41,7 @@ export async function UserUpdate(id,name, phone, email, password) {
         }
     })
     return{message: "Sikeresen frissitve"}
-}
+}*/
 
 //reviews tábla-------------------------------------------------------------
 
@@ -53,7 +53,7 @@ export async function reviewsList(req, res) {
     return data;
 };
 
-export async function reviewsAdd(rating, comment, created_at, reservation_id, user_id) {
+export async function reviewsAdd(rating, comment, user_id, reservation_id) {
     await prisma.reviews.create({
         data:{
             rating: Number(rating),
@@ -83,6 +83,7 @@ export async function reviewUpdate(id, rating, comment, created_at) {
     })
     return{message: "Sikeresen frissitve vannak az adat(ok)!"}    
 };
+
 //reservation tábla---------------------------------------------------------
 
 export async function reservationList(res,req) {
@@ -90,7 +91,7 @@ export async function reservationList(res,req) {
     return(data);
 };
 
-export async function reservationAdd(user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers) {
+export async function reservationAdd(user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers, guest_name) {
     
     const tableID = await prisma.tables.findUnique({
             where:{
@@ -356,3 +357,10 @@ export async function reviewLogoutUpdate(id, name, email, comment, rating, creat
     })
     return{message: "Sikeresen frissitve!"}
 };
+
+export async function checkEmail(email) {
+    const user = await prisma.users.findFirst({
+        where: { email: email }
+    });
+    return user !== null; // Ha találunk felhasználót, akkor már foglalt az e-mail cím
+}
