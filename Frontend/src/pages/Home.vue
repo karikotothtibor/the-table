@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref, computed, warn } from "vue";
+import { onMounted, ref, computed, nextTick } from "vue";
 import 'vue3-carousel/carousel.css';
 import { Carousel, Slide } from 'vue3-carousel';
 import {RouterLink} from 'vue-router';
-import { Alert } from "bootstrap";
+import Header from '../components/Header.vue';
+import Footer from '../components/Footer.vue';
 
 
 const reviews = ref();
@@ -14,7 +15,21 @@ const reservation = ref([]);
 const token = ref(localStorage.getItem('token'));
 const reserv = [];
 const openningHours = ref([]);
+const modalRef = ref(null);
+const modalMessage = ref('');
+const modalType = ref('error'); 
 
+const modalShow = (message, type = 'error') => {
+  modalMessage.value = message;
+  modalType.value = type;
+
+  nextTick(() => {
+    if (modalRef.value) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalRef.value);
+      modal.show();
+    }
+  });
+};
 
 async function getReviews() {
   try {
@@ -35,15 +50,16 @@ async function getReviews() {
 
 async function getUser () {
     try{
-     const res = fetch ("http://localhost:3300/user");
+     const res = await fetch ("http://localhost:3300/user");
       if (!res.ok) throw new Error ("Nem sikerült a felhasználót lekérni!");  
       const data = await res.json();
       user.value = data;
      }catch (error) {
       console.error(error);
-
+      
      }
 };
+
 async function getMe() {
   if (!token.value) {
     console.log("Nincs token, user nem tölthető be");
@@ -65,7 +81,7 @@ async function getMe() {
         localStorage.removeItem('token');
         token.value = null;
         me.value = null;
-        alert("A munkamenet lejárt, kérjük jelentkezz be újra!");
+        modalShow('A munkamenet lejárt, kérjük jelentkezz be újra!','warning');
         return;
       }
       throw new Error(`HTTP hiba! státusz: ${response.status}`);
@@ -85,7 +101,7 @@ async function getMe() {
     }
   } catch (error) {
     console.error("Hiba a user lekérésekor:", error);
-    alert("Hiba a felhasználói adatok betöltésekor!");
+    modalShow('Hiba a felhasználói adatok betöltésekor!','error');
   }
 }
 
@@ -124,8 +140,8 @@ async function getOpenningHours() {
       
      }
 };
-
 onMounted(async() => {
+   
  await getUser();
  await getMe();
  await getReviews();
@@ -145,40 +161,38 @@ const formData = ref({
 const nameRegex = /^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+(\s+[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+)+$/
 
 async function submitReviewForm() {
-    // 1) Bejelentkezett user
   if (me.value && me.value.id > 0) {
     try {
-      await fetch("http://localhost:3300/reviewsadd", {
+      await fetch("http://localhost:3300/reviewadd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           comment: formData.value.comment,
           rating: formData.value.rating,
           reservation_id: reserv[reserv.length - 1].id,
-          user_id: me.value.id, 
-      }),
-    });
-    alert('Köszönjük az értékelést!')
+          user_id: me.value.id,
+        }),
+      })
+      modalShow('Köszönjük az értékelést!','success');
 
-    setTimeout(() => {
-    window.location.reload();
-  }, 1000); // 1 másodperc múlva frissít
-  } catch (err) {
-    console.error('Hiba a reviewadd-nél:', err)
-    alert('Nem sikerült elküldeni az értékelést.')
+      setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 1 másodperc múlva frissít
+    } catch (err) {
+      console.error('Hiba a reviewadd-nél:', err)
+      modalShow('Nem sikerült elküldeni az értékelést.','error');
     }
-  return
-}
+    return
+  }
 
-  // 2) NINCS bejelentkezett user → név ellenőrzés + vendég review
-const name = formData.value.name?.trim() || ''
-if (!nameRegex.test(name)) {
-  alert('Adj meg teljes nevet (vezetéknév és keresztnév).')
-  return
-}
+  const name = formData.value.name?.trim() || '';
+  if (!nameRegex.test(name)) {
+    modalShow('Adj meg teljes nevet (vezetéknév és keresztnév).','warning');
+    return
+  }
 
-try {
-  await fetch("http://localhost:3300/reviewslogoutadd", {
+  try {
+    await fetch("http://localhost:3300/reviewslogoutadd", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -187,79 +201,41 @@ try {
         comment: formData.value.comment,
         rating: formData.value.rating,
       }),
-  })
-  alert('Köszönjük az értékelést!')
-        setTimeout(() => {
-        window.location.reload();
-      }, 1000); // 1 másodperc múlva frissít
-    } catch (err) {
-      console.error('Hiba a reviewslogoutadd-nál:', err)
-      alert('Nem sikerült elküldeni az értékelést.')  
+    })
+    modalShow('Köszönjük az értékelést!','success');
+
+      setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 1 másodperc múlva frissít
+  } catch (err) {
+    console.error('Hiba a reviewslogoutadd-nál:', err)
+    modalShow('Nem sikerült elküldeni az értékelést.','error');
   }
 }
 
 const isLoggedIn = computed(() => !!token.value)
+
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  isLoggedIn.value = false;
+  token.value = null;
+  modalShow('Sikeresen kijelentkeztél!','success');
+};
 
 </script>
 
 <template>
 
     <!-- Fejléc -->
-    <header id="header">
-   <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container">
-          <a class="navbar-brand d-flex align-items-center" href="#">
-            <i class="fa-solid fa-utensils me-2"></i>
-            <span class="fw-bold text-info">The Table</span>
-          </a>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="mainNav">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-              <li class="nav-item"><a class="nav-link" href="#home">Főoldal</a></li>
-              <li class="nav-item"><a class="nav-link" href="#about">Rólunk</a></li>
-              <li class="nav-item"><RouterLink class="nav-link" to="/etlap">Étlap</RouterLink></li>
-              <li class="nav-item"><RouterLink class="nav-link" to="/Reservation">Foglalás</RouterLink></li>
-              <li class="nav-item"><a class="nav-link" href="#contact">Kapcsolat</a></li>
-              <li class="nav-item mt-2"><a class="nav-link" href=""><div >
-                <p v-if="isLoggedIn">Be vagy jelentkezve ✅</p>
-                <p v-else>Nem vagy bejelentkezve ❌</p>
-              </div></a></li>
-              
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="fas fa-user-circle fa-lg "></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                   <li>
-                      <span class="dropdown-item-text small text-muted" v-if="isLoggedIn && user">
-                        Bejelentkezve mint: <strong>{{ me.name }}</strong>
-                      </span>
-                    </li>
-                    
-                  <li><RouterLink class="dropdown-item" to="/user">Profil</RouterLink></li>
-                  <li><a class="dropdown-item" href="#settings">Beállítások</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="#logout">Kijelentkezés</a></li>
-                  
-                </ul>
-              </li>
-              <li class="nav-item" v-if="!isLoggedIn">
-            <RouterLink class="nav-link" to="/login">
-              <i class="fa-solid fa-right-to-bracket me-1"></i>
-              Bejelentkezés
-            </RouterLink>
-          </li>
-            </ul>
-          </div>
-        </div>
-</nav>
-
-</header>
+      <Header 
+    :me="me"
+    :user="user" 
+    :is-logged-in="isLoggedIn" 
+    :handle-logout="handleLogout"
+  />
     
     <!-- Hero szekció -->
-    <section id="home" class="vh-100 d-flex align-items-center bg-dark text-white" style="background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'); background-size:cover;">
+    <section id="home" class="vh-100 d-flex align-items-center bg-dark text-light " style="background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'); background-size:cover;">
       <div class="container text-center py-5">
         <h1 class="display-3 fw-bold" style="text-shadow: -3px -3px 2px black;">Az ízek meseszép otthona</h1>
         <p class="lead mb-4" style="text-shadow: -2px -2px 1px black;">2004 óta varázsoljuk vissza kedvenc ízeid legfinomabb megtestesülésébe saját, kiemelt receptjeink segítségével.</p>
@@ -269,9 +245,9 @@ const isLoggedIn = computed(() => !!token.value)
        
         <div class="row mt-5">
           
-          <div class="col"> style="text-shadow: -2px -2px 1px black;"<span class="h2 text-warning">2004</span><br />év nyitottunk</div>
-          <div class="col"> style="text-shadow: -2px -2px 1px black;"<span class="h2 text-warning">120</span><br />Elégedett vendég naponta</div>
-          <div class="col"> style="text-shadow: -2px -2px 1px black;"<span class="h2 text-warning">100%</span><br />Friss alapanyagok</div>
+          <div class="col" style="text-shadow: -2px -2px 1px black;"><span class="h2 text-warning" >2004</span><br />év nyitottunk</div>
+          <div class="col" style="text-shadow: -2px -2px 1px black;"><span class="h2 text-warning">120</span><br />Elégedett vendég naponta</div>
+          <div class="col" style="text-shadow: -2px -2px 1px black;"><span class="h2 text-warning">100%</span><br />Friss alapanyagok</div>
         </div>
       </div>
     </section>
@@ -285,12 +261,12 @@ const isLoggedIn = computed(() => !!token.value)
         <div class="row align-items-center">
           <div class="col-lg-6">
             <h3 class="mb-4">Ízlésre hangolt megkülönböztetettség</h3>
-            <p>2004-ben nyitottuk meg éttermünket azzal a céllal, hogy a budapesti vendégeink számára klasszikus ízeket kínáljunk modern, szofisztikált formában. A kezdeti években csupán 10 étellel, egy kis helyiséggel és nagyobb küzdelemmel dolgoztunk.</p>
+            <p>2004-ben nyitottuk meg éttermünket azzal a céllal, hogy a Szentesi vendégeink számára klasszikus ízeket kínáljunk modern, szofisztikált formában. A kezdeti években csupán 10 étellel, egy kis helyiséggel és nagyobb küzdelemmel dolgoztunk.</p>
             <div class="alert alert-warning fw-bold fst-italic my-4"> Mai napig megtartottuk az eredeti főétel lényegét, míg az elkészítés tudományának módja fejlődött az évek során.</div>
             <p>Filozófiánk egyszerű: mindig friss, helyi összetevőket használunk minden fogáshoz. Mi magunk közvetlenül dolgozunk össze helyi gyártókkal és termelőkkel, akik kölcsönös megbecsülésen alapuló kapcsolatot alakítottak ki velünk az elmúlt években.</p>
             <a href="#reviews" class="btn btn-outline-info">Írjon véleményt</a>
           </div>
-          <div class="col-lg-6">
+          <div class="col-lg-6 shadow" >
             <div id="carouselExampleDark" class="carousel carousel slide">
               <div class="carousel-indicators">
                 <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
@@ -335,7 +311,7 @@ const isLoggedIn = computed(() => !!token.value)
                 <label for="name" class="form-label" >Teljes név</label>
                 <div v-if="isLoggedIn && user">
             <input 
-              type="text" 
+              type="text"
               id="name" 
               class="form-control bg-light" 
               :value="me.name" 
@@ -349,6 +325,10 @@ const isLoggedIn = computed(() => !!token.value)
                 <label for="email" class="form-label">Email cím</label>
                 <input type="email" class="form-control" id="email" required v-model="formData.email" :readonly="me.id > 0">
               </div>
+              <div class="mb-3">
+                <label for="review" class="form-label">Vélemény</label>
+                <textarea id="review" class="form-control" rows="5" required v-model="formData.comment"></textarea>
+              </div>
                <div class="mb-3" >
                   <div id="rating" class="d-flex mb-2" >
                     <span class="rating-star" v-for="star in 5" 
@@ -361,8 +341,8 @@ const isLoggedIn = computed(() => !!token.value)
                   </div><p class="mt-2 small text-muted">Aktuális értékelés: {{ formData.rating }}</p>
                   <input type="hidden" name="rating" id="rating-input" required v-if="formData.rating > 0" v-model="formData.rating">
                 </div>
-
-              <button type="submit" class="btn btn-info w-100" @click="formData">Vélemény Küldése</button>
+                
+              <button type="submit" class="btn btn-info w-100" >Vélemény Küldése</button>
             </form>
           </div>
         </div>
@@ -383,23 +363,27 @@ const isLoggedIn = computed(() => !!token.value)
     slide-effect="slide"
     breakpoint-mode="carousel"
     :breakpoints="{
+      400: {
+        itemsToShow: 2,
+        snapAlign: 'start',
+      },
       600: {
-        itemsToShow: 1,
+        itemsToShow: 3,
         snapAlign: 'center',
       },
       1000: {
-        itemsToShow: 3,
+        itemsToShow: 4,
         snapAlign: 'start',
       }
-    }">
-    <Slide v-for="(review) in reviews" :key="review">
+    }" >
+    <Slide v-for="review in reviews" :key="review"  >
        <div class="carousel-item active " style="height: 20rem;" >
           <div class="row justify-content-center">
-            <div class="card mb-3 bg-secondary-subtle review-card"  style="border: 2px solid grey; height:15rem;">
-              <div class="card-body d-flex flex-column shadow-bottom-sm" >
+            <div class="card mb-3 bg-secondary-subtle review-card "  style="border: 2px solid grey; height:17rem;" >
+              <div class="card-body d-flex flex-column shadow-bottom-sm"  >
                 <span class="row align-items-center positon-absolute "><i class="fas fa-user-circle fa-lg"></i></span>
                 <h5 class="card-title text-center mb-3 text-info">{{ review.name }}</h5><h5 class="card-title text-center mb-3 mt-0 text-info" v-for="users in user"  v-show="review.user_id === users.id"  >{{ users.name }}</h5>
-                <h6 class="card-subtitle mb-3 text-center text-warning" style="font-size:1.5rem;">
+                <h6 class="card-subtitle mb-3  text-center text-warning" style="font-size:1.5rem;">
                 <span v-for="star in 5" :key="star">
                 <span v-if="star <= Number(review.rating)">&#9733;</span>
                 </span></h6>
@@ -412,43 +396,128 @@ const isLoggedIn = computed(() => !!token.value)
     </Slide>
     </Carousel>      
     </section>
-    
-    <!-- Lábléc -->
-   <footer class="bg-info text-white py-5">
-      <div class="container text-center">
-        <div class="mb-3">
-          <i class="fa-solid fa-utensils fa-2x"></i>
-          <span class="h4 ms-2 fw-bold">The Table</span>
-        </div>
-        <nav class="mb-3">
-          <a href="#home" class="text-white mx-2">Főoldal</a>
-          <a href="#about" class="text-white mx-2">Rólunk</a>
-          <a href="#menu" class="text-white mx-2">Étlap</a>
-          <a href="#reservation" class="text-white mx-2">Asztalfoglalás</a>
-          <a href="#contact" class="text-white mx-2">Kapcsolat</a>
-        </nav>
-        <div class="mb-3">
-          <a href="#" class="text-white mx-1"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="text-white mx-1"><i class="fab fa-instagram"></i></a>
-          <a href="#" class="text-white mx-1"><i class="fab fa-tripadvisor"></i></a>
-          <a href="#" class="text-white mx-1"><i class="fab fa-twitter"></i></a>
-        </div>
-        <div class="small">&copy; 2004-2023 Minden jog fenntartva The Table étterem</div>
-        <div class="container mt-4">
-          <div class="row justify-content-center">
-            <div class="col-auto">
-              <h5 class="fw-bold">Nyitvatartás</h5>
-              <ul class="list-unstyled">
-                <li v-for="openningHour in openningHours" :key="openningHour.id">{{openningHour.day_of_week}}: {{ openningHour.open_time }}:00 - {{openningHour.close_time}}:00</li>
-              </ul>
-            </div>
+    <!-- Ételek ajánlatai szekció -->
+<section id="menu" class="py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center mb-5 text-info">Éttermünk Ajánlatai</h2>
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card mb-4 shadow-sm">
+          <img src="/pictures/margherita-pizza.jpg" class="card-img-top" alt="Margherita Pizza">
+          <div class="card-body">
+            <h5 class="card-title text-center">Margherita Pizza</h5>
+            <p class="card-text text-center">A klasszikus pizza friss mozzarellával, paradicsommal és bazsalikommal.</p>
           </div>
         </div>
       </div>
-    </footer>     
+      
+      <div class="col-md-3">
+        <div class="card mb-4 shadow-sm">
+          <img src="/pictures/caesar-salad.jpg" class="card-img-top" alt="Caesar Salad">
+          <div class="card-body">
+            <h5 class="card-title text-center">Caesar Saláta</h5>
+            <p class="card-text text-center">Friss saláta ropogós zöldségekkel, Caesar öntettel és pirított kenyérkockákkal.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card mb-4 shadow-sm">
+          <img src="/pictures/spaghetti-carbonara.jpg" class="card-img-top" alt="Spaghetti Carbonara">
+          <div class="card-body">
+            <h5 class="card-title text-center">Spaghetti Carbonara</h5>
+            <p class="card-text text-center">Finom spaghetti krémes carbonara szósszal és baconnel.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card mb-4 shadow-sm">
+          <img src="/pictures/tiramisu.jpg" class="card-img-top" alt="Tiramisu">
+          <div class="card-body">
+            <h5 class="card-title text-center">Tiramisu</h5>
+            <p class="card-text text-center">Gazdag és krémes olasz desszert mascarpone-val és eszpresszóval.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="modal fade" tabindex="-1" ref="modalRef">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div
+        class="modal-header"
+        :class="{
+          'bg-danger text-white': modalType === 'error',
+          'bg-success text-white': modalType === 'success',
+          'bg-warning text-dark': modalType === 'warning'
+        }"
+      >
+        <h5 class="modal-title">
+          {{
+            modalType === 'success'
+              ? 'Siker'
+              : modalType === 'warning'
+              ? 'Figyelmeztetés'
+              : 'Hiba'
+          }}
+        </h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        {{ modalMessage }}
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+    
+    <!-- Lábléc -->
+   <Footer :openning-hours="openningHours" />    
 <router-view></router-view>
 </template>
 
 <style scoped>
+#menu .card {
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  height: 400px;
+}
 
+#menu .card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+#menu .card-body {
+  padding: 15px;
+}
+
+#menu .card-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+#menu .card-text {
+  font-size: 1rem;
+  color: #555;
+}
+
+#menu .row {
+  display: flex;
+  justify-content: space-between;
+}
+
+#menu .col-md-3 {
+  margin-bottom: 20px;
+}
 </style>
