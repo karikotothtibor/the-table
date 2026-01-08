@@ -90,6 +90,13 @@ const isLoggedIn = computed(() => !!token.value)
           </li>
           <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="me-4 flex-grow-1">
+              <div class="dish-name">Eperkrémleves</div>
+              <div class="dish-desc">joghurttal krémesítve, vanília fagyival, tejszínhabbal.</div>
+            </div>
+            <div class="dish-price">2 200 Ft</div>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
               <div class="dish-name">Fűszeres haltepertő kerti zöldségekkel, bagettel</div>
               <div class="dish-desc">Ropogósra sült bundázott harcsacsíkok, párolt zöldségekkel, vajas bagettel.</div>
             </div>
@@ -119,10 +126,17 @@ const isLoggedIn = computed(() => !!token.value)
           </li>
           <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="me-4 flex-grow-1">
-              <div class="dish-name">Ropogós kacsacomb párolt vöröskáposztával, pirított gnocchival.</div>
+              <div class="dish-name">Ropogós kacsacomb párolt vöröskáposztával, pirított gnocchival</div>
               <div class="dish-desc">Fűszeres kacsa és almás-pezsgős káposzta, kis itáliai csavarral.</div>
             </div>
             <div class="dish-price">5 200 Ft</div>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Kacsamáj falatok</div>
+              <div class="dish-desc">Pikáns vadas mártásban, szalvétagombóccal, tejföl díszítéssel.</div>
+            </div>
+            <div class="dish-price">4 900 Ft</div>
           </li>
           <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="me-4 flex-grow-1">
@@ -200,6 +214,13 @@ const isLoggedIn = computed(() => !!token.value)
               <div class="dish-name">Sült almáspite</div>
               <div class="dish-desc">Fahéjas krémmel és vaníliafagylalttal.</div>
               <span class="menu-badge mt-1">Laktovegetáriánus</span>
+            </div>
+            <div class="dish-price">2 400 Ft</div>
+          </li>
+          li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Cafe gourmand</div>
+              <div class="dish-desc">Presszó kávé vagy cappucino a ház süteményeinek válogatásából .</div>
             </div>
             <div class="dish-price">2 400 Ft</div>
           </li>
