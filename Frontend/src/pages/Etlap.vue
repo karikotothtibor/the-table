@@ -293,6 +293,22 @@ const isLoggedIn = computed(() => !!token.value)
             </div>
             <div class="dish-price">2 900 Ft</div>
           </li>
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Paradicsomsaláta</div>
+              <div class="dish-desc">Balzsamecet, paradicsom, fokhagyma, sonkahagyma.</div>
+              <span class="menu-badge mt-1">Vegetáriánus</span>
+            </div>
+            <div class="dish-price">2 500 Ft</div>
+          </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Svéd uborkasaláta</div>
+              <div class="dish-desc">Balzsamecet, uborka, fokhagyma, sárgarépa.</div>
+              <span class="menu-badge mt-1">Vegetáriánus</span>
+            </div>
+            <div class="dish-price">2 400 Ft</div>
+          </li>
         </ul>
       </section>
 
@@ -316,9 +332,17 @@ const isLoggedIn = computed(() => !!token.value)
             <span class="dish-name">Házi limonádé (0,33l)</span>
             <span class="dish-price">1 000 Ft</span>
           </li>
-                    <li class="list-group-item d-flex justify-content-between">
+          <li class="list-group-item d-flex justify-content-between">
             <span class="dish-name">Alkoholmentes gyümölcsfröccs (0,33l)</span>
+            <span class="dish-price">1 100 Ft</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="dish-name">Alkoholmentes sör (0,5l)</span>
             <span class="dish-price">1 200 Ft</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="dish-name">Fröccs száraz fehérborból (0,5l)</span>
+            <span class="dish-price">1 300 Ft</span>
           </li>
         </ul>
       </section>
