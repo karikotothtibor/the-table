@@ -1,16 +1,3 @@
-<template>
-  <div>
-
-    <Admin v-if="isLoggedIn && currentUser?.role==='ADMIN'" @logged-out="handleLogout" />
-
-    <!-- Ha be van jelentkezve a user -->
-    <Reservation v-else-if="isLoggedIn && currentUser?.role === 'USER'" @logged-out="handleLogout" />
-
-    <!-- Ha nincs bejelentkezve -->
-    <AuthForm v-else @logged-in="handleLogin" />
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import AuthForm from './components/AuthForm.vue'
@@ -65,3 +52,16 @@ watch(isLoggedIn, (loggedIn) => {
 });
 
 </script>
+
+<template>
+  <div>
+
+    <Admin v-if="isLoggedIn && currentUser?.role==='ADMIN'" @logged-out="handleLogout" />
+
+    <!-- Ha be van jelentkezve a user -->
+    <Reservation v-else-if="isLoggedIn && currentUser?.role === 'USER'" @logged-out="handleLogout" />
+
+    <!-- Ha nincs bejelentkezve -->
+    <AuthForm v-else @logged-in="handleLogin" />
+  </div>
+</template>
