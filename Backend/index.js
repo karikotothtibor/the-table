@@ -8,8 +8,6 @@ import jwt from "jsonwebtoken";
 const app = express();
 const port = 3300;
 
-
-
 app.use(express.json());
 
 const prisma = new PrismaClient();
@@ -140,7 +138,7 @@ app.get("/me", authenticate, async (req, res) => {
   }
 })
 
-// Felhasználó nevének,telefonszámának,email módosítása
+// Felhasználó nevének, telefonszámának, email címének módosítása
 app.put("/users/:id", authenticate, async (req, res) => {
   const  id  = Number(req.params.id)
   const { name, email, phone, role } = req.body
@@ -187,7 +185,7 @@ app.put("/password/:id", authenticate, async (req, res) => {
   }
 })
 
-//Ffelhasználó törlése
+//Felhasználó törlése
 app.delete("/user/:id", authenticate, async (req,res) => {
   const id  = req.params.id
   try {
