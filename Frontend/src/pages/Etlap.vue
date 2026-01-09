@@ -232,12 +232,16 @@ const isLoggedIn = computed(() => !!token.value)
         <h2>Köretek</h2>
         <ul class="list-group menu-list">
           <li class="list-group-item d-flex justify-content-between">
-            <span class="dish-name">Házi hasábburgonya</span>
+            <span class="dish-name">Házi fűszeres hasábburgonya</span>
             <span class="dish-price">1 200 Ft</span>
           </li>
           <li class="list-group-item d-flex justify-content-between">
             <span class="dish-name">Grillezett zöldségmix</span>
             <span class="dish-price">1 600 Ft</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="dish-name">Párolt rizsgombócok zöldborsóval és sárgarépával</span>
+            <span class="dish-price">1 300 Ft</span>
           </li>
           <li class="list-group-item d-flex justify-content-between">
             <span class="dish-name">Burgonyapüré</span>
