@@ -4,6 +4,8 @@ import { restaurantRouter } from "./controller/restaurant-controll.js";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import swaggerSpec from "./swagger.js";
+import swaggerUi from "swagger-ui-express";
 
 const app = express();
 const port = 3300;
@@ -21,6 +23,7 @@ const corsOption = {
 }
 
 app.use(cors(corsOption));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(restaurantRouter);
 
 app.listen(port,()=>{
@@ -60,6 +63,50 @@ function authenticate(req, res, next) {
   next()
 }*/
 
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     summary: Felhasználó regisztráció
+ *     description: Új felhasználó létrehozása és JWT token visszaadása
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Teszt Elek
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: teszt@pelda.hu
+ *               phone:
+ *                 type: string
+ *                 example: "+36301234567"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: Titkos6jelszo!
+ *     responses:
+ *       201:
+ *         description: Sikeres regisztráció
+ *       400:
+ *         description: Hiányzó kötelező mezők
+ *       409:
+ *         description: Email már létezik
+ *       500:
+ *         description: Szerver hiba
+ */
+
 // Regisztráció
 app.post("/register", async (req,res) => {
   const { name, email,phone, password } = req.body;
@@ -84,6 +131,41 @@ app.post("/register", async (req,res) => {
   }
 })
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Felhasználó bejelentkezés
+ *     description: Email és jelszó alapján JWT token visszaadása
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: teszt@pelda.hu
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: Titkos6jelszo!
+ *     responses:
+ *       200:
+ *         description: Sikeres bejelentkezés
+ *       401:
+ *         description: Hibás email vagy jelszó
+ *       500:
+ *         description: Szerver hiba
+ */
+
 // Bejelentkezés
 app.post("/login", async (req, res) => {
   try {
@@ -102,6 +184,46 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Szerver hiba" })
   }
 })
+
+/**
+ * @swagger
+ * /user:
+ *   get:
+ *     summary: Felhasználók listázása
+ *     description: Az összes felhasználó lekérése jelszó nélkül
+ *     tags:
+ *       - Users
+ *     responses:
+ *       200:
+ *         description: Felhasználók sikeresen lekérve
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   name:
+ *                     type: string
+ *                     example: Teszt Elek
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     example: teszt@pelda.hu
+ *                   phone:
+ *                     type: string
+ *                     example: "+36301234567"
+ *                   role:
+ *                     type: string
+ *                     example: USER
+ *       409:
+ *         description: Email már létezik
+ *       500:
+ *         description: Szerver hiba
+ */
 
 //Felhasználók lekérése - csak adminoknak app.get("/user", authenticate, isAdmin, async (req, res)
 app.get("/user", async (req, res) => {
@@ -123,6 +245,46 @@ app.get("/user", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /me:
+ *   get:
+ *     summary: Saját felhasználói adatok lekérése
+ *     description: Visszaadja a bejelentkezett felhasználó adatait. JWT token szükséges.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []  # JWT token szükséges
+ *     responses:
+ *       200:
+ *         description: Felhasználó sikeresen lekérve
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 name:
+ *                   type: string
+ *                   example: Teszt Elek
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   example: teszt@pelda.hu
+ *                 phone:
+ *                   type: string
+ *                   example: "+36301234567"
+ *                 role:
+ *                   type: string
+ *                   example: USER
+ *       404:
+ *         description: Felhasználó nem található
+ *       500:
+ *         description: Szerver hiba
+ */
+
 // Saját profil
 app.get("/me", authenticate, async (req, res) => {
   try {
@@ -137,6 +299,44 @@ app.get("/me", authenticate, async (req, res) => {
     res.status(500).json({ error: "Szerver hiba" })
   }
 })
+
+/**
+ * @swagger
+ * /me:
+ *   get:
+ *     summary: Saját felhasználói adatok lekérése
+ *     description: Visszaadja a bejelentkezett felhasználó adatait. JWT token szükséges.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []  # JWT token szükséges
+ *     responses:
+ *       200:
+ *         description: Felhasználó sikeresen lekérve
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 name:
+ *                   type: string
+ *                   example: Teszt Elek
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   example: teszt@pelda.hu
+ *                 phone:
+ *                   type: string
+ *                   example: "+36301234567"
+ *                 role:
+ *                   type: string
+ *                   example: USER
+ *       400:
+ *         description: Felhasználó nem található vagy nem sikerült frissíteni
+ */
 
 // Felhasználó nevének, telefonszámának, email címének módosítása
 app.put("/users/:id", authenticate, async (req, res) => {
@@ -155,6 +355,52 @@ app.put("/users/:id", authenticate, async (req, res) => {
     res.status(400).json({ error: "Felhasználó nem található vagy nem sikerült frissíteni" })
   }
 })
+
+/**
+ * @swagger
+ * /password/{id}:
+ *   put:
+ *     summary: Felhasználó jelszavának módosítása
+ *     description: Régi jelszó ellenőrzése után frissíti a felhasználó jelszavát. JWT token szükséges.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []  # JWT szükséges
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: A felhasználó ID-ja
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - oldPassword
+ *               - newPassword
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: regiJelszo123
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: ujJelszo456
+ *     responses:
+ *       200:
+ *         description: Sikeres jelszófrissítés
+ *       400:
+ *         description: Hibás régi jelszó vagy frissítés sikertelen
+ *       401:
+ *         description: Token hiányzik vagy érvénytelen
+ *       404:
+ *         description: Felhasználó nem található
+ */
 
 app.put("/password/:id", authenticate, async (req, res) => {
   const  id  = Number(req.params.id)
@@ -185,6 +431,30 @@ app.put("/password/:id", authenticate, async (req, res) => {
   }
 })
 
+/**
+ * @swagger
+ * /user/{id}:
+ *   delete:
+ *     summary: Felhasználó törlése
+ *     description: Törli a megadott ID-jú felhasználót. JWT token szükséges.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []  # JWT szükséges
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: A törlendő felhasználó ID-ja
+ *     responses:
+ *       200:
+ *         description: Felhasználó sikeresen törölve
+ *       400:
+ *         description: Felhasználó nem található vagy törlés sikertelen
+ */
+
 //Felhasználó törlése
 app.delete("/user/:id", authenticate, async (req,res) => {
   const id  = req.params.id
@@ -196,6 +466,81 @@ app.delete("/user/:id", authenticate, async (req,res) => {
   }
 });
 
+/**
+ * @swagger
+ * /tablestatus:
+ *   get:
+ *     summary: Asztalok foglaltsági státusza
+ *     description: Visszaadja az összes asztalt és a hozzájuk tartozó foglalásokat. Lehetőség van egy konkrét időpontra (`at`) vagy időtartományra (`start` és `end`) szűrni.
+ *     tags:
+ *       - Tables
+ *     parameters:
+ *       - in: query
+ *         name: at
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Egy konkrét időpont a státusz lekéréséhez (ISO formátum)
+ *       - in: query
+ *         name: start
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Tartomány kezdete (ISO formátum)
+ *       - in: query
+ *         name: end
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Tartomány vége (ISO formátum)
+ *     responses:
+ *       200:
+ *         description: Asztalok és foglalások sikeresen lekérve
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   number:
+ *                     type: integer
+ *                     example: 5
+ *                   seats:
+ *                     type: integer
+ *                     example: 4
+ *                   reservation:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 101
+ *                         dtime_from:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2026-01-05T18:00:00Z"
+ *                         dtime_to:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2026-01-05T20:00:00Z"
+ *                         reservation_status:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 1
+ *                             status:
+ *                               type: string
+ *                               example: "confirmed"
+ *       500:
+ *         description: Hiba a lekérés során
+ */
+
 //Asztal státusz ellenörzés
 app.get("/tablestatus", async (req, res) => {
   try {
@@ -203,7 +548,7 @@ app.get("/tablestatus", async (req, res) => {
     
     let target;
     if (start && end) {
-      // ✅ ÚJ: teljes tartomány!
+      // ÚJ: teljes tartomány!
       target = { start: new Date(start), end: new Date(end) };
     } else if (at) {
       // Régi fallback
