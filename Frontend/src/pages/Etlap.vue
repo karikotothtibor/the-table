@@ -174,6 +174,22 @@ const isLoggedIn = computed(() => !!token.value)
             </div>
             <div class="dish-price">4 200 Ft</div>
           </li>
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Töltött paprika gazdagon</div>
+              <div class="dish-desc">Erdei gombákkal, sós burgonya krémmel, krémes paradicsomszósszal.</div>
+            <span class="menu-badge mt-1">Vegán</span>
+            </div>
+            <div class="dish-price">3 800 Ft</div>
+          </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Zalai dödölle</div>
+              <div class="dish-desc">juhtúró, tejföl, pácolt lilahagyma, hagymakrém, sült hagyma.</div>
+            <span class="menu-badge mt-1">Vegán</span>
+            </div>
+            <div class="dish-price">2 900 Ft</div>
+          </li>
         </ul>
       </section>
 
@@ -347,6 +363,10 @@ const isLoggedIn = computed(() => !!token.value)
           <li class="list-group-item d-flex justify-content-between">
             <span class="dish-name">Fröccs száraz fehérborból (0,5l)</span>
             <span class="dish-price">1 300 Ft</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="dish-name">A ház vörösbora</span>
+            <span class="dish-price">350 Ft/dl</span>
           </li>
         </ul>
       </section>
