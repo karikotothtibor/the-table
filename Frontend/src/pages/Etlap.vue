@@ -233,7 +233,7 @@ const isLoggedIn = computed(() => !!token.value)
             </div>
             <div class="dish-price">2 400 Ft</div>
           </li>
-          li class="list-group-item d-flex justify-content-between align-items-start">
+          <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="me-4 flex-grow-1">
               <div class="dish-name">Cafe gourmand</div>
               <div class="dish-desc">Presszó kávé vagy cappucino a ház süteményeinek válogatásából .</div>
