@@ -12,7 +12,7 @@ const userSelected = ref(null);
 const table = ref([]);
 const status = ref([]);
 const reservations = ref([]);
-const tabstatus = ref("szabad");
+const tabstatus = ref(["szabad"]);
 const date = ref('');
 const time = ref('');
 const timeOffSet= ref('');
@@ -674,13 +674,13 @@ async function reservationAdd() {
   }
 };
 
-const sumSzabad = () => {
-  return tabstatus.value.filter(t => !t.reservation || t.reservation.length === 0).length;
-};
+const sumSzabad = computed(() => 
+  (!tabstatus.value ? [] : tabstatus.value).filter(t => !t.reservation || t.reservation.length === 0).length
+)
 
-const sumFoglalt = () => {
-  return tabstatus.value.filter(t => t.reservation?.length > 0).length;
-};
+const sumFoglalt = computed(() => 
+  (!tabstatus.value ? [] : tabstatus.value).filter(t => t.reservation?.length > 0).length
+)
 
 onMounted(async()=>{
   await getUser();
@@ -1007,7 +1007,7 @@ const deleteNotification = async () => {
     <main class="col-md-9 col-lg-10">
       <!-- Dashboard statisztika kártyák -->
     <div class="row">
-    <div class="col-md-5 col-lg-5">
+    <div class="col-md-6 col-lg-6">
       <div class="card ">
         <div class="card-header fw-bold">Áttekintés</div>
         <div class="row text-center">
@@ -1022,14 +1022,14 @@ const deleteNotification = async () => {
             <div class="p-3 rounded bg-success bg-opacity-10 mb-2">
               <i class="fas fa-check-circle fs-3 text-success"></i>
             </div>
-            <div class="fs-4">{{sumSzabad.value}}</div>
+            <div class="fs-4">{{sumSzabad}}</div>
             <div class="small text-muted">Szabad asztal</div>
           </div>
           <div class="col-6 col-md-3 p-3">
             <div class="p-3 rounded bg-warning bg-opacity-10 mb-2">
               <i class="fas fa-user-clock fs-3 text-warning"></i>
             </div>
-            <div class="fs-4">{{sumFoglalt.value}}</div>
+            <div class="fs-4">{{sumFoglalt}}</div>
             <div class="small text-muted">Foglalt asztal</div>
           </div>
           <div class="col-6 col-md-3 p-3">
@@ -1044,7 +1044,7 @@ const deleteNotification = async () => {
         </div>
 
       <!-- Asztal elrendezés -->
-      <div class="card mb-4 col-md-5 col-lg-5 ">
+      <div class="card mb-4 col-md-6 col-lg-6 ">
         <div class="row justify-content-center">
         <div class="card-header d-flex justify-content-between align-items-center fw-bold ">
           <span>Asztal Elrendezés</span>
@@ -1112,7 +1112,7 @@ const deleteNotification = async () => {
       </div>
 
       <!-- Foglalások táblázat -->
-      <div class="card mb-4 col-md-9 col-lg-10" id="Foglalasok" style="height: 25rem;">
+      <div class="card mb-4 " id="Foglalasok" style="height: 25rem;">
         <div class="card-header">
           <h2 class="mb-0">Aktuális Foglalások</h2>
         </div>

@@ -34,6 +34,16 @@ const router = createRouter({
             name: "Étlap",
             component: () => import("../pages/Etlap.vue"),
         },
+        {
+            path:"/aszf",
+            name: "Ászf",
+            component: () => import("../components/Aszf.vue"),
+        },
+        {
+            path:"/adatvedelem",
+            name: "Adatvédelem",
+            component: () => import("../components/Adatvedelem.vue"),
+        },
     ],
 });
 

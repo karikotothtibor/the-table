@@ -379,7 +379,7 @@ onMounted(async() => {
                 </div>
                 <div class="form-check mb-3">
                   <input class="form-check-input" type="checkbox" id="terms" v-model="checkbox" required>
-                  <label class="form-check-label" for="terms">Elfogadom az   <a href="https://www.szerzodesiminta.hu/gdpr/etterem-adatkezelesi" target="_blank" class="link-info" rel="noopener noreferrer">Adatvédelmi Szabályzatot</a>, és megismertem az <a href="https://www.jogiszabalyok.hu/aszf-sablon/etterem-aszf" target="_blank" class="link-info" rel="noopener noreferrer">Általános Szerződési Feltételeket</a></label>
+                  <label class="form-check-label" for="terms">Elfogadom az   <RouterLink to="/adatvedelem"><a href="" target="_blank" class="link-info" rel="noopener noreferrer">Adatvédelmi Szabályzatot</a></RouterLink>, és megismertem az <RouterLink to="/aszf"><a href="" target="_blank" class="link-info" rel="noopener noreferrer">Általános Szerződési Feltételeket</a></RouterLink></label>
                 </div>
                 <button type="submit" class="btn btn-info w-100 fw-bold" >Regisztráció</button>
                 <div class="small text-center mt-3">

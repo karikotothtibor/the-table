@@ -262,6 +262,9 @@ const remove = async () => {
     modalShow('A felhasználó sikeresen törölve lett!', 'success');
     localStorage.removeItem("token");
     emit("logged-out");
+      setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   } catch (err) {
     console.error("Nem sikerült törölni:", err);
     modalShow(`Nem sikerült törölni a felhasználót: ${err.message}`, 'error');
