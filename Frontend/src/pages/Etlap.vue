@@ -1,69 +1,127 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
+import Header from '../components/Header.vue';
+import Footer from '../components/Footer.vue';
+
+const user = ref([]);
+const me = ref([]);
+const openningHours = ref([]);
+const modalRef = ref(null);
+const modalMessage = ref('');
+const modalType = ref('error');
 
 const token = ref(localStorage.getItem('token'));
 
+const modalShow = (message, type = 'error') => {
+  modalMessage.value = message;
+  modalType.value = type;
+
+  nextTick(() => {
+    if (modalRef.value) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalRef.value);
+      modal.show();
+    }
+  });
+};
+
+
+async function getUser () {
+    try{
+     const res = await fetch ("http://localhost:3300/user");
+      if (!res.ok) throw new Error ("Nem sikerült a felhasználót lekérni!");  
+      const data = await res.json();
+      user.value = data;
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
+async function getMe() {
+  if (!token.value) {
+    console.log("Nincs token, user nem tölthető be");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3300/me", {
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      }
+    });
+    
+    console.log("🔍 /me response status:", response.status);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token érvénytelen, töröljük
+        localStorage.removeItem('token');
+        token.value = null;
+        me.value = null;
+        modalShow('A munkamenet lejárt, kérjük jelentkezz be újra!', 'warning');
+        return;
+      }
+      throw new Error(`HTTP hiba! státusz: ${response.status}`);
+    }
+    
+    const userData = await response.json();
+    me.value = userData;
+    
+    console.log("Bejelentkezett user:", userData);
+    
+    // User ID automatikus beállítása
+    if (me.value && me.value.id) {
+      console.log("User ID beállítva:", me.value.id);
+    } else {
+      console.warn("User adatok hiányoznak");
+    }
+  } catch (error) {
+    console.error("Hiba a user lekérésekor:", error);
+    modalShow('Hiba a felhasználói adatok betöltésekor!', 'error');
+  }
+}
+
+async function getOpenningHours() {
+    try{
+     const response = await fetch ("http://localhost:3300/openninghours");
+      if (!response.ok) throw new Error ("Nem sikerült nyitvatartási táblát lekérni!");  
+      const data = await response.json();
+      openningHours.value = data;
+      console.log("Nyitvatartási adatok",openningHours.value)
+     }catch (error) {
+      console.error(error);
+      
+     }
+};
+
 const isLoggedIn = computed(() => !!token.value)
+
+onMounted(async() => {  
+ await getUser();
+ await getMe();
+ await getOpenningHours() 
+});
+
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  isLoggedIn.value = false;
+  token.value = null;
+  modalShow('Kijelentkeztél!', 'success');
+};
+
 </script>
 <template>
-<!-- Felső sáv -->
-    <header id="header">
-   <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-        <div class="container">
-          <RouterLink class="navbar-brand d-flex align-items-center" to="/">
-            <i class="fa-solid fa-utensils me-2"></i>
-            <span class="fw-bold text-info">The Table</span>
-          </RouterLink>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="mainNav">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-              <li class="nav-item"><RouterLink class="nav-link" to="/">Főoldal</RouterLink></li>
-              <li class="nav-item"><a class="nav-link" href="#about">Rólunk</a></li>
-              <li class="nav-item"><RouterLink class="nav-link" to="/etlap">Étlap</RouterLink></li>
-              <li class="nav-item"><RouterLink class="nav-link" to="/reservation">Foglalás</RouterLink></li>
-              <li class="nav-item"><a class="nav-link" href="#contact">Kapcsolat</a></li>
-              <li class="nav-item"><a class="nav-link" href=""><div>
-                <p v-if="isLoggedIn">Be vagy jelentkezve ✅</p>
-                <p v-else>Nem vagy bejelentkezve ❌</p>
-              </div></a></li>
-              
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="fas fa-user-circle fa-lg"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                   <li>
-                      <span class="dropdown-item-text small text-muted" v-if="isLoggedIn && user">
-                        Bejelentkezve mint: <strong>{{ me.name }}</strong>
-                      </span>
-                    </li>
-                    
-                  <li><RouterLink class="dropdown-item" to="/user">Profil</RouterLink></li>
-                  <li><a class="dropdown-item" href="#settings">Beállítások</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="#logout">Kijelentkezés</a></li>
-                  
-                </ul>
-              </li>
-              <li class="nav-item" v-if="!isLoggedIn">
-            <RouterLink class="nav-link" to="/login">
-              <i class="fa-solid fa-right-to-bracket me-1"></i>
-              Bejelentkezés
-            </RouterLink>
-          </li>
-            </ul>
-          </div>
-        </div>
-</nav>
-
-</header>
+      <Header 
+    :me="me"
+    :user="user" 
+    :is-logged-in="isLoggedIn" 
+    :handle-logout="handleLogout"
+    />
 
     <main class="container pb-5">
 
       <!-- Előételek -->
-      <section class="menu-section">
+      <section class="menu-section mt-5">
         <h2>Előételek</h2>
         <ul class="list-group menu-list">
           <li class="list-group-item d-flex justify-content-between align-items-start">
@@ -190,6 +248,20 @@ const isLoggedIn = computed(() => !!token.value)
             </div>
             <div class="dish-price">2 900 Ft</div>
           </li>
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Margherita Pizza</div>
+              <div class="dish-desc">A klasszikus pizza friss mozzarellával, paradicsommal és bazsalikommal.</div>
+            </div>
+            <div class="dish-price">2 850 Ft</div>
+          </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Spaghetti Carbonara</div>
+              <div class="dish-desc">Finom spaghetti krémes carbonara szósszal és baconnel.</div>
+            </div>
+            <div class="dish-price">3 200 Ft</div>
+          </li>
         </ul>
       </section>
 
@@ -239,6 +311,13 @@ const isLoggedIn = computed(() => !!token.value)
               <div class="dish-desc">Presszó kávé vagy cappucino a ház süteményeinek válogatásából .</div>
             </div>
             <div class="dish-price">2 400 Ft</div>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-4 flex-grow-1">
+              <div class="dish-name">Tiramisu</div>
+              <div class="dish-desc">Gazdag és krémes olasz desszert mascarpone-val és eszpresszóval.</div>
+            </div>
+            <div class="dish-price">2 800 Ft</div>
           </li>
         </ul>
       </section>
@@ -372,6 +451,7 @@ const isLoggedIn = computed(() => !!token.value)
       </section>
 
     </main>
+    <Footer :openning-hours="openningHours" />
 </template>
 <style>
 :root {

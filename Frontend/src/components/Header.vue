@@ -31,10 +31,10 @@ const handleLogoutLocal = () => {
   <header id="header">
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top mb-3">
       <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="#">
+        <RouterLink class="navbar-brand d-flex align-items-center" to="/">
           <i class="fa-solid fa-utensils me-2"></i>
           <span class="fw-bold text-info">The Table</span>
-        </a>
+        </RouterLink>
         <button class="navbar-toggler" type="button" @click="toggleMenu" aria-expanded="isMenuOpen.toString()">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -46,7 +46,7 @@ const handleLogoutLocal = () => {
             <li class="nav-item"><RouterLink class="nav-link" to="/reservation">Foglalás</RouterLink></li>
             <li class="nav-item"><a class="nav-link" href="#contact">Kapcsolat</a></li>
             
-            <!-- Dropdown - MŰKÖDIK! -->
+            <!-- Dropdown-->
             <li class="nav-item dropdown">
               <a 
                 class="nav-link dropdown-toggle d-flex align-items-center" 
