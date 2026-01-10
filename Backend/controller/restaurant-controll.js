@@ -136,7 +136,7 @@ router.get ("/reservation",async (req, res) => {
  *         description: Hibás adatok
  */
 
-router.post ("/reservationadd", async (req, res) => {
+router.post ("/reservation", async (req, res) => {
     const {user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers,guest_name} = req.body;
     try {
         const data = await reservationAdd(user_id, status_id, table_id, dtime_from, dtime_to, number_of_customers,guest_name);
@@ -290,7 +290,7 @@ router.get ("/table",async (req, res) => {
  *         description: Hibás adatok vagy az asztal létrehozása sikertelen
  */
 
-router.post ("/tableadd", async (req, res) => {
+router.post ("/table", async (req, res) => {
     const {capacity} = req.body;
     try {
         const data = await tableAdd(capacity);
@@ -857,7 +857,7 @@ router.get("/review",async (req, res) => {
  *         description: Hibás adatok vagy az értékelés létrehozása sikertelen
  */
 
-router.post("/reviewadd",async (req, res) => {
+router.post("/review",async (req, res) => {
     const {rating, comment, user_id, reservation_id } = req.body;
     try {
         const data = await reviewsAdd(rating, comment, user_id, reservation_id);
@@ -1142,7 +1142,7 @@ router.put("/openninghours", async (req, res) => {
  *         description: Hiba az értékelések lekérése során
  */
 
-router.get("/reviewslogoutList", async (req, res) => {
+router.get("/reviewslogout", async (req, res) => {
     try {
         const data = await reviewLogoutList();
         res.status(200).json(data);
@@ -1219,7 +1219,7 @@ router.get("/reviewslogoutList", async (req, res) => {
  *         description: Hibás adatok vagy az értékelés létrehozása sikertelen
  */
 
-router.post("/reviewslogoutadd", async (req, res) => {
+router.post("/reviewslogout", async (req, res) => {
     const {name, email, comment, rating } = req.body;
     try {
         const data = await reviewLogoutAdd(name, email, comment, rating);
