@@ -230,7 +230,6 @@ app.get("/user", async (req, res) => {
   try {
     const users = await prisma.users.findMany({
       select: { id: true, name: true, email: true, phone: true, role: true },
-        // jelszót ne küldjünk vissza 
     });
     res.json(users);
   } catch (error) {

@@ -23,6 +23,17 @@ const router = createRouter({
             name: "UserProfile",
             component: () => import("../components/UserProfile.vue"),
         },
+        {
+            path:"/admin",
+            name: "Admin",
+            component: () => import("../pages/Admin.vue"),
+            meta: { requiresAuth: true, requiresAdmin: true } // Csak adminok
+        },
+        {
+            path:"/etlap",
+            name: "Étlap",
+            component: () => import("../pages/Etlap.vue"),
+        },
     ],
 });
 

@@ -93,7 +93,7 @@ async function getMe() {
 
 async function getUser() {
     try{
-     const res = fetch ("http://localhost:3300/user");
+     const res = await fetch ("http://localhost:3300/user");
       if (!res.ok) throw new Error ("Nem sikerült a felhasználót lekérni!");  
       const data = await res.json();
       user.value = data;
@@ -104,7 +104,7 @@ async function getUser() {
 
 async function getTable() {
     try{
-     const res = fetch ("http://localhost:3300/table");
+     const res = await fetch ("http://localhost:3300/table");
       if (!res.ok) throw new Error ("Nem sikerült a asztalt lekérni!");  
       const data = await res.json();
       table.value = data;
@@ -512,7 +512,7 @@ const formatTime = (dateString) => {
     <p class="lead">Válassza ki az Önnek tetsző asztalt és foglalja le ideális időpontjában</p>
   </div>
    <div class="row mt-5 text-center">         
-          <div class="col"><span class="h2 text-warning" v-for="tables in table">{{ table.length }}</span><br />Összes asztal</div>
+          <div class="col"><span class="h2 text-warning">{{ table.length }}</span><br />Összes asztal</div>
           <div class="col"><span class="h2 text-warning">{{sumSzabad()}}</span><br />Szabad asztal</div>
           <div class="col"><span class="h2 text-warning">{{ sumFoglalt() }}</span><br />Foglalt asztal</div>
         </div>

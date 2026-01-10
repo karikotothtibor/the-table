@@ -36,7 +36,7 @@ async function getReviews() {
     const res1 = await fetch("http://localhost:3300/review");
     const data1 = await res1.json();
 
-    const res2 = await fetch("http://localhost:3300/reviewslogoutList");
+    const res2 = await fetch("http://localhost:3300/reviewslogout");
     const data2 = await res2.json();
 
     reviews.value = data1.concat(data2);
@@ -163,7 +163,7 @@ const nameRegex = /^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+(\s+[A-Za-zÁÉ
 async function submitReviewForm() {
   if (me.value && me.value.id > 0) {
     try {
-      await fetch("http://localhost:3300/reviewadd", {
+      await fetch("http://localhost:3300/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -192,7 +192,7 @@ async function submitReviewForm() {
   }
 
   try {
-    await fetch("http://localhost:3300/reviewslogoutadd", {
+    await fetch("http://localhost:3300/reviewslogout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch} from "vue";
+import { ref, onMounted, computed, watch, nextTick} from "vue";
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 
@@ -29,10 +29,12 @@ const modalShow = (message, type = 'error') => {
   modalMessage.value = message;
   modalType.value = type;
   nextTick(() => {
-    if (modalRef.value) {
-      const modal = bootstrap.Modal.getOrCreateInstance(modalRef.value);
-      modal.show();
-    }
+    const instance = bootstrap.Modal.getInstance(modalRef.value)
+    const modal = instance || new bootstrap.Modal(modalRef.value, {
+      backdrop: 'static', 
+      focus: true  
+    })
+    modal.show()
   })
 };
 
@@ -122,7 +124,7 @@ onMounted(async()=>{
 });
 
 const isValidEmail = computed(() => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(me.value.email);
 });
 
 // NÉV validáció
@@ -282,13 +284,6 @@ const cancelReservation = async () => {
   }
 };}
 
-/*function openModal() {
-  const modal = bootstrap.Modal.getOrCreateInstance('#messageModal')
-  modal.show()
-  showModal.value = true
-}*/
-
-
 async function messageAdd() {
   if ( !messageText.value.trim()) {
     alert('Kérem tölse ki az összes mezőt!', 'warning');
@@ -340,8 +335,8 @@ const setActiveTab = (tab) => {
         };        
 
 function selectedReservation(reservation){
-  selected.value = reservations;
-  reservations.value.id=0;
+  selected.value = reservation;
+  console.log(selected.value.id)
 };
 
 currentDate.value = new Date().toISOString();
@@ -545,9 +540,9 @@ const handleLogout = () => {
                   <p class="text-muted">Nincsenek aktív foglalások</p>
                 </div>
                 <div v-else class="reservation-card overflow-auto w-100 " >
-                  <div class="d-flex justify-content-between align-items-start mb-2"  v-for="reservation in reservations.slice().reverse()" :key="reservation.id">
+                  <div class="d-flex justify-content-between align-items-start mb-2"  v-for="reservation in reservations.slice().reverse()" :key="reservation.id" >
                     
-                    <div class="reservation-card container-fluid px-4  w-100 " v-if="reservation.user_id === me.id && new Date(reservation.dtime_from) >= new Date()">
+                    <div class="reservation-card container-fluid px-4  w-100 " v-if="reservation.user_id === me.id && new Date(reservation.dtime_from) >= new Date()" @click="selectedReservation(reservation)">
                       <h5 class="mb-1" >{{ reservation.table }}</h5>
                       <p class="mb-1 text-muted" >{{reservation.dtime_from.split("T")[0]}}  {{  reservation.dtime_from.split("T")[1].split('.')[0].slice(0, -3)}}</p>
                       <p class="mb-1" >Létszám: {{ reservation.number_of_customers }} fő</p>

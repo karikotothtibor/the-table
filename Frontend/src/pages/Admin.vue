@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed,watch } from 'vue';
+import { onMounted, ref, computed, watch, nextTick } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style';
 import { useRouter } from 'vue-router';
@@ -79,7 +79,7 @@ function selectedUserForDelete(user){
   userSelected.value = user;
   userSelected.value.id = user.id;
   console.log(userSelected.value.id);
-  alert("Felhasználó kiválasztva!")
+  showModal("Felhasználó kiválasztva!",'success')
 };
 
 const userUpdate = async () => {
@@ -97,12 +97,13 @@ const userUpdate = async () => {
           email: userSelected.value.email
        }),
     });
-    alert('Felhasználói adatok sikeresen frissítve!');
+    showModal('Felhasználói adatok sikeresen frissítve!','success');
     setTimeout(() => {
       window.location.reload();
     }, 1000); // 1 másodperc múlva frissít
   } catch (err) {
     console.error("Nem sikerült frissíteni:", err);
+    showModal('Nem sikerült frissíteni!','error');
   }
 };
 
@@ -424,8 +425,8 @@ async function tableUpdate() {
 
 function selectedOpeningHours(openningHour){
   selectedHour.value = openningHour;
-  selectedHour.value.id = openningHour.id;
- console.log(selectedHour.value.id , selectedHour.value.id)
+  //selectedHour.value.id = openningHour.id;
+ console.log(selectedHour.value.id)
 };
 
 async function openingHoursAdd() {
@@ -700,7 +701,7 @@ function selectedTable(tables){
   selected.value = tables;
   formData.value.table_id=tables.id;
   console.log(formData.value.table_id, selected)
-  alert("Asztal kiválasztva!")
+  showModal("Asztal kiválasztva!", 'success')
 };
 
 const deleteTable = async () => {
@@ -1021,14 +1022,14 @@ const deleteNotification = async () => {
             <div class="p-3 rounded bg-success bg-opacity-10 mb-2">
               <i class="fas fa-check-circle fs-3 text-success"></i>
             </div>
-            <div class="fs-4">{{sumSzabad()}}</div>
+            <div class="fs-4">{{sumSzabad.value}}</div>
             <div class="small text-muted">Szabad asztal</div>
           </div>
           <div class="col-6 col-md-3 p-3">
             <div class="p-3 rounded bg-warning bg-opacity-10 mb-2">
               <i class="fas fa-user-clock fs-3 text-warning"></i>
             </div>
-            <div class="fs-4">{{sumFoglalt()}}</div>
+            <div class="fs-4">{{sumFoglalt.value}}</div>
             <div class="small text-muted">Foglalt asztal</div>
           </div>
           <div class="col-6 col-md-3 p-3">
@@ -1274,8 +1275,8 @@ const deleteNotification = async () => {
           <div class="col mb-3">
             <label for="timeOffSet" class="form-label">A foglalás várható hossza</label>
             <select id="timeOffSet" class="form-select" v-model="timeOffSet" required :disabled=" !timeOffsetOptions.length">
-              <option value="" disabled>{{ timeSlots.length ? 'Válassz időpontot' : (date === currentDateCut ? 'Már lezárultak a mai időpontok' : 'Először válassz dátumot') }}</option>
-              <option v-for="slot in timeSlots" :key="slot" :value="slot">{{ slot }}</option>
+              <option value="" disabled>{{ timeOffsetOptions.length ? 'Válassz időtartamot' : 'Időpont túl késő' }}</option>
+              <option v-for="offset in timeOffsetOptions" :key="offset" :value="offset">{{ offset }}</option>
             </select>
           </div>
 
@@ -1391,7 +1392,7 @@ const deleteNotification = async () => {
             <div class="d-flex justify-content-between align-items-center border-bottom py-2" v-for="openningHour in openningHours" :key="openningHour.id" @click.prevent="selectedOpeningHours(openningHour)">
               <span class="fw-medium">{{openningHour.day_of_week}}</span>
               <span v-if="openningHour.open_time === 0 && openningHour.close_time === 0">Zárva</span>
-              <span class="text-muted" contenteditable="false">{{openningHour.open_time}}:00 - {{ openningHour.close_time }}:00</span>
+              <span class="text-muted" v-else contenteditable="false">{{openningHour.open_time}}:00 - {{ openningHour.close_time }}:00</span>
             
             <button class="btn btn-outline-secondary btn-sm" @click="deleteOpeningHours"><i class="fas fa-trash"></i></button>
             <div>
@@ -1454,7 +1455,7 @@ const deleteNotification = async () => {
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                       Mégse
                     </button>
-                    <button type="button" class="btn btn-primary" form="updateHoursForm">
+                    <button type="submit" class="btn btn-primary" form="updateHoursForm">
                       Küldés
                     </button>
                   </div>
@@ -1488,13 +1489,13 @@ const deleteNotification = async () => {
                 <th>Műveletek</th>
               </tr>
             </thead>
-            <tbody v-for="review in reviews" :key="review.id">
-              <tr @click.prevent="selectedReview(review)">
+            <tbody v-for="review in reviews" :key="review.id" >
+              <tr @click="selectedReview(review)">
                 <td><span v-if="users.some(u => u.id === review.user_id)">{{users.find(u => u.id === review.user_id).name}}</span><span v-else>{{review.name}}</span></td>
                 <td ><span>{{review.rating}}<span class="text-warning" style="font-size:1rem;">&#9733;</span></span></td>
                 <td>{{review.comment}}</td>
                 <td>
-                  <button class="btn btn-outline-secondary btn-sm" @click.stop="deleteReview"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-outline-secondary btn-sm" @click.stop="selectedReview(review); deleteReview()"><i class="fas fa-trash"></i></button>
                 </td>
               </tr>
             </tbody>

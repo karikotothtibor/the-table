@@ -1,18 +1,18 @@
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import Footer from '../components/Footer.vue'
 
 const name = ref('')
 const email = ref('')
 const password = ref('')
-const passwordconfirm = ref('')
+const passwordConfirm = ref('')
 const showPassword = ref(false)
 const phone = ref('')
 const checkbox = ref(false)
 const emit = defineEmits(['logged-in'])
-const oppeningHours = ref([])
+const openningHours = ref([])
 const activeTab = ref('login')
 const modalRef = ref(null)
 const modalMessage = ref('')
@@ -32,7 +32,7 @@ const modalShow = (message, type = 'error') => {
   });
 };
 
-const login = async () => {
+const login = async (e) => {
   e?.preventDefault()
   try {
     const res = await fetch('http://localhost:3300/login', {
@@ -50,11 +50,11 @@ const login = async () => {
       emit('logged-in')
       console.log("Bejelentkezve")
     } else {
-      alert(data.error, 'error')
+      modalShow(data.error, 'error');
     }
   } catch (err) {
     console.error(err)
-    alert('Hiba a bejelentkezés során', 'error')
+    modalShow('Hiba történt a bejelentkezés során!', 'error');
   }
 }
 
@@ -181,7 +181,7 @@ const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value;
 }
 
-const isLoggedIn = computed(() => !!tokenn.value)
+const isLoggedIn = computed(() => !!token.value)
 
 async function getOpenningHours() {
     try{

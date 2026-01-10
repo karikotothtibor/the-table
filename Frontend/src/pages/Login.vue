@@ -1,11 +1,12 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import AuthForm from './components/AuthForm.vue'
+import AuthForm from '../components/AuthForm.vue'
 import Reservation from '../pages/Reservation.vue'
 import Admin from '../pages/Admin.vue'
 
 const isLoggedIn = ref(!!localStorage.getItem('token'));
 const currentUser= ref([]);
+const emit = defineEmits(['logged-out']);
 
 // Bejelentkezés esemény kezelése
 const handleLogin = async() => {

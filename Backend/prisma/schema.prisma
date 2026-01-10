@@ -23,7 +23,7 @@ model notifications {
 }
 
 model opening_hours {
-  id          Int                       @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
   day_of_week String @db.Text
   open_time   Int
   close_time  Int
@@ -99,8 +99,8 @@ model reviews_logout {
 enum reservation_status_status {
   szabad
   foglalt
-  torolve             
-  EMPTY_ENUM_VALUE    @map("")
+  torolve
+  EMPTY_ENUM_VALUE @map("")
 }
 
 enum users_role {
@@ -108,9 +108,10 @@ enum users_role {
   ADMIN
   LETILTVA
 }
+
 enum notifications_status {
-  ELKULDVE            
+  ELKULDVE
   SIKERTELEN
-  VARAKOZAS           
-  EMPTY_ENUM_VALUE               @map("")
+  VARAKOZAS
+  EMPTY_ENUM_VALUE @map("")
 }
