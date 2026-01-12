@@ -100,14 +100,14 @@ export async function reservationAdd(user_id, status_id, table_id, dtime_from, d
                 id: Number(table_id),
             }
     })
-    if (!tableID) throw console.error("Asztal nem található!");
+    if (!tableID) throw new Error("Asztal nem található!");
     
     const statusID = await prisma.reservation_status.findUnique({
         where:{
             id: Number(status_id)
         }
     })
-    if (!statusID) throw console.error("Nincs a foglaláshoz státusz!");
+    if (!statusID) throw new Error("Nincs a foglaláshoz státusz!");
 
 
     await prisma.reservation.create({

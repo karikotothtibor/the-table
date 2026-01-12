@@ -146,8 +146,15 @@ const register = async () => {
         phone: phone.value
       })
     })
-    modalShow('Sikeres regisztráció!', 'success');
+    
     const data = await res.json()
+
+     if (!res.ok) {
+    modalShow(data.error || 'Hiba történt a regisztráció során!', 'error')
+    return
+    }
+
+    modalShow('Sikeres regisztráció!', 'success');
     if (data.token) {
       localStorage.setItem('token', data.token)
       emit('logged-in')

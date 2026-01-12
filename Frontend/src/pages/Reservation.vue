@@ -314,7 +314,7 @@ function selectedAsztal(tables){
 onMounted(async()=>{
   await getMe();
   //if(token.value){getMe()};
-  if (me.value.role !== 'USER'|| 'ADMIN' && !isLoggedIn) {
+  if ((me.value?.role !== 'USER' && me.value?.role !== 'ADMIN') || !isLoggedIn) {
   router.replace('/')};
   await getOpenningHours();
   await getUser(); 

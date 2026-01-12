@@ -30,6 +30,7 @@ app.listen(port,()=>{
     console.log("A szerver elindult a 3300-as porton.");
 });
 
+export default app;
 // JWT token generálása
 function generateToken(user) {
   return jwt.sign(
@@ -111,8 +112,8 @@ function authenticate(req, res, next) {
 app.post("/register", async (req,res) => {
   const { name, email,phone, password } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "Név, email megadása kötelező"});
+  if (!name || !email || !password || !phone) {
+    return res.status(400).json({ error: "Név, email, telefon megadása kötelező"});
   }
 
   try {
@@ -123,10 +124,10 @@ app.post("/register", async (req,res) => {
   const token = generateToken(newUser)
   res.status(201).json({ token })
   } catch (error) {
-    console.error(error);
     if (error.code === "P2002") {
       return res.status(409).json({ error: "Ez az email már létezik!" });
     }
+    console.error(error);
     res.status(500).json({ error: "Szerver hiba!" })
   }
 })
@@ -544,7 +545,7 @@ app.delete("/user/:id", authenticate, async (req,res) => {
 app.get("/tablestatus", async (req, res) => {
   try {
     const { at, start, end } = req.query;
-    
+
     let target;
     if (start && end) {
       // ÚJ: teljes tartomány!

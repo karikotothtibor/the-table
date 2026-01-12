@@ -17,11 +17,13 @@ const router = createRouter({
             path:"/reservation",
             name: "Reservation",
             component: () => import("../pages/Reservation.vue"),
+            meta: { requiresAuth: true, requiresAdmin: false }
         },
         {
             path:"/user",
             name: "UserProfile",
             component: () => import("../components/UserProfile.vue"),
+            meta: { requiresAuth: true, requiresAdmin: true }
         },
         {
             path:"/admin",
