@@ -553,7 +553,9 @@ async function openningHoursUpdate() {
 
     modal?.hide()
 
-
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
   } catch (err) {
     console.error('Nyitvatartás frissítési hiba:', err)
     showModal('Nem sikerült frissíteni a nyitvatartást. Próbálja újra!','error')
@@ -745,6 +747,7 @@ const logout = () => {
       setTimeout(() => {
       window.location.reload();
     }, 1000);
+    router.replace("/")
 };
 
 const dtime_from = computed(() => {

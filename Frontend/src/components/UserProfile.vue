@@ -2,7 +2,9 @@
 import { ref, onMounted, computed, watch, nextTick} from "vue";
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const users = ref([]);
 const me = ref([]);
 const reservations = ref([]);
@@ -345,13 +347,14 @@ function selectedReservation(reservation){
 currentDate.value = new Date().toISOString();
 
 const logout = () => {
-  localStorage.removeItem("token");
-  if (confirm('Biztosan ki szeretne jelentkezni?')) {
-            modalShow('Sikeres kijelentkezés!');}
-  emit("logged-out");
-      setTimeout(() => {
-      window.location.reload();
-    }, 1500);
+  localStorage.removeItem('token')
+  isLoggedIn.value = false;
+  token.value = null;
+  modalShow('Sikeresen kijelentkeztél!', 'success');
+  setTimeout(() => {
+      window.location.reload()
+    }, 1500)
+    router.replace("/")
 };
 
 watch(token, (newToken) => {
@@ -387,12 +390,7 @@ const deleteNotification = async () => {
 
 const isLoggedIn = computed(() => !!token.value);
 
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  isLoggedIn.value = false;
-  token.value = null;
-  modalShow('Kijelentkeztél!', 'succes');
-};
+
 </script>
 
 <template>
@@ -400,7 +398,7 @@ const handleLogout = () => {
     :me="me"
     :user="users" 
     :is-logged-in="isLoggedIn" 
-    :handle-logout="handleLogout"
+    :handle-logout="logout"
   />
 
    <div id="app">

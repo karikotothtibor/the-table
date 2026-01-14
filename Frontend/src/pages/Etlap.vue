@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 
+const router = useRouter();
 const user = ref([]);
 const me = ref([]);
 const openningHours = ref([]);
@@ -107,6 +109,7 @@ const handleLogout = () => {
   isLoggedIn.value = false;
   token.value = null;
   modalShow('Kijelentkeztél!', 'success');
+  router.replace("/")
 };
 
 </script>

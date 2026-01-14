@@ -322,10 +322,10 @@ onMounted(async() => {
         <div class="card-body">
           <ul class="nav nav-tabs nav-justified mb-4" id="authTab" role="tablist">
             <li class="nav-item" role="presentation">
-              <button class="nav-link"  :class="{ active: activeTab === 'login' }" type="button" @click="activeTab = 'login'">Bejelentkezés</button>
+              <button class="nav-link"  :class="{ active: activeTab === 'login' }" type="button" @click="activeTab = 'login'" data-testid="login-tab">Bejelentkezés</button>
             </li>
             <li class="nav-item" role="presentation">
-              <button class="nav-link" :class="{ active: activeTab === 'register' }" type="button" @click="activeTab = 'register'" >Regisztráció</button>
+              <button class="nav-link" :class="{ active: activeTab === 'register' }" type="button" @click="activeTab = 'register'" data-testid="register-tab">Regisztráció</button>
             </li>
           </ul>
           <div class="tab-content" id="authTabContent">

@@ -333,6 +333,7 @@ const handleLogout = () => {
   setTimeout(() => {
       window.location.reload()
     }, 1500)
+    router.replace("/")
 };
 
 const selectedDateTime = computed(() => {
@@ -549,7 +550,7 @@ const formatTime = (dateString) => {
       </div>
     </div>
     <div class="col-lg-4 ">
-    <div class="align-items-center gap-4 bg-success text-white rounded p-4  shadow-sm mb-5 mt-3" >
+    <div class="align-items-center gap-4 bg-success text-white rounded p-4  shadow-sm mb-5 mt-3" :class="isSelectedTableBooked ? 'bg-danger' : 'bg-success'">
       <i class="fas fa-table fa-2x opacity-75"></i>
       <div v-if="selected ">
         <h5 class="mb-1">{{selected.id}}. asztal</h5>
@@ -614,7 +615,7 @@ const formatTime = (dateString) => {
             <strong>{{ formatTime(overlappingReservation.dtime_from) }} - {{ formatTime(overlappingReservation.dtime_to) }}</strong>
           </span><span>Kérjük válasszon másik időpontot!!</span>
         </div>
-        <button type="submit" class="btn btn-primary w-100" @click.prevent="reservationAdd">Foglalás megerősítése</button>
+        <button type="submit" v-else class="btn btn-primary w-100" @click.prevent="reservationAdd">Foglalás megerősítése</button>
       </form>
     </div>
   </div>
