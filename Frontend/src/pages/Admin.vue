@@ -599,7 +599,7 @@ async function messageAdd() {
     if (response.ok) {
       const modalEl = document.getElementById('messageModal')
       const modal = bootstrap.Modal.getInstance(modalEl)
-
+      
         modalEl.addEventListener(
         'hidden.bs.modal',
         () => {
@@ -613,7 +613,9 @@ async function messageAdd() {
       selectedUser.value = null
       selectedRes.value = null
       messageText.value = ''
-      await getNotification(); // Frissítjük a listát
+      setTimeout(() => {
+      window.location.reload()
+    }, 3000)
     } else {
       showModal('Hiba az üzenet küldésekor!', 'error');
     }
@@ -1197,9 +1199,9 @@ const deleteNotification = async () => {
               <div class="modal-body">
                 <div class="mb-3">
                   <label class="form-label" for="cinzett">Címzett</label>
-                  <select class="form-select" id="cimzett" v-model="selectedUser">
+                  <select class="form-select" id="cimzett" v-model="selectedUser" :disabled="selectedUser && selectedUser.id === 1" >
                     <option value="">Válasszon felhasználót</option>
-                    <option v-for="user in users" :key="user.id" :value="user">
+                    <option v-for="user in users" :key="user.id" :value="user.id">
                       {{ user.name}}
                     </option>
                   </select>
@@ -1222,7 +1224,7 @@ const deleteNotification = async () => {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                   Mégse
                 </button>
-                <button type="button" class="btn btn-primary" @click="messageAdd">
+                <button type="button" class="btn btn-primary" :disabled="!selectedUser || selectedUser.id === 1" @click="messageAdd">
                   Küldés
                 </button>
               </div>
