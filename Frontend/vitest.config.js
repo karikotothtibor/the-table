@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [vue()],
   test: {
     globals: true,
-    include: ['tests/**/*.test.{js,ts,jsx,tsx}'],
-    exclude: ['tests/**/*.e2e.spec.{js,ts,jsx,tsx}','**/node_modules/**', '**/dist/**'],
+    include: ['tests/unit/**/*.test.{js,ts,jsx,tsx}'],
+    exclude: ['tests/e2e/**/*.e2e.spec.{js,ts,jsx,tsx}','**/node_modules/**', '**/dist/**'],
     environment: 'happy-dom',  // Gyors unit tesztek
     setupFiles: ['./tests/setup.js'],
      css: false,

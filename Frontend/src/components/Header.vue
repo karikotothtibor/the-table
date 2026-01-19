@@ -44,7 +44,7 @@ const handleLogoutLocal = () => {
             <li class="nav-item"><RouterLink class="nav-link" to="/#about">Rólunk</RouterLink></li>
             <li class="nav-item"><RouterLink class="nav-link" to="/etlap">Étlap</RouterLink></li>
             <li class="nav-item"><RouterLink class="nav-link" to="/reservation">Foglalás</RouterLink></li>
-            <li class="nav-item"><a class="nav-link" href="#contact">Kapcsolat</a></li>
+            <li class="nav-item"><a class="nav-link" href="#footer">Kapcsolat</a></li>
             
             <!-- Dropdown-->
             <li class="nav-item dropdown">

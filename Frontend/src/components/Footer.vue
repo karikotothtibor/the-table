@@ -7,7 +7,7 @@ defineProps({
 </script>
 
 <template>
-  <footer class="bg-info text-white py-5">
+  <footer class="bg-info text-white py-5" id="footer">
     <div class="container text-center">
       <div class="mb-3">
         <i class="fa-solid fa-utensils fa-2x"></i>

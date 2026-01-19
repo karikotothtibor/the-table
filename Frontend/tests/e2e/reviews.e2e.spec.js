@@ -14,7 +14,6 @@ test.describe('AddReviews - Értékelés E2E', () => {
     const stars = page.locator('.rating-star')
     await stars.nth(3).click()
 
-    // Ellenőrizd, hogy hidden input / szöveg mutatja az értéket (ahogy a komponensben van)
     const ratingText = page.locator('text=Aktuális értékelés')
     await expect(ratingText).toContainText('4')
 
@@ -22,8 +21,7 @@ test.describe('AddReviews - Értékelés E2E', () => {
     const reviewForm = page.locator('form').filter({ has: page.locator('#review') })
     await reviewForm.getByRole('button', { name: /Vélemény Küldése/i }).click()
 
-    // Minimális ellenőrzés: ne jelenjen meg hiba modal/szöveg
-    // (Ha van konkrét success üzenet, ahhoz tudunk igazítani.)
+
     await page.waitForTimeout(500) // kis várakozás
   })
 })

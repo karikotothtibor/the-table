@@ -1,7 +1,7 @@
-// tests/reviewsAdd.test.js - JAVÍTOTT VERZIÓ
+// tests/reviewsAdd.test.js 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import AddReviews from '../src/pages/Home.vue'
+import AddReviews from '../../src/pages/Home.vue'
 import {nextTick, ref} from 'vue'
 
 describe('AddReviews', () => {
@@ -17,7 +17,7 @@ describe('AddReviews', () => {
   describe('Review form', () => {
     it('form fields exist', () => {
       const wrapper = mount(AddReviews)
-      // ✅ .exists()
+     
       expect(wrapper.find('#name').exists()).toBe(true)
       expect(wrapper.find('#email').exists()).toBe(true)
       expect(wrapper.find('#review').exists()).toBe(true)
@@ -68,7 +68,7 @@ describe('AddReviews', () => {
   await wrapper.find('form').trigger('submit')
   await flushPromises()
   await nextTick()
-  // ✅ 3. hívás a /review POST (onMounted után)
+  
   const calls = mockFetch.mock.calls
   console.table(calls.map((call, i) => ({
     '#': i+1,
@@ -94,7 +94,7 @@ describe('AddReviews', () => {
       
       await wrapper.find('form').trigger('submit')
       
-      // ✅ Modal szöveg ellenőrzés
+      // Modal szöveg ellenőrzés
       expect(window.bootstrap.Modal.getOrCreateInstance).toHaveBeenCalled()
       
     })

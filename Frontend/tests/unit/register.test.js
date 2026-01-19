@@ -1,7 +1,7 @@
-// tests/register.test.js - VÉGLEGES ZÖLD VERZIÓ
+// tests/register.test.js 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import AuthForm from '../src/components/AuthForm.vue'
+import AuthForm from '../../src/components/AuthForm.vue'
 
 describe('AuthForm - Register', () => {
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe('AuthForm - Register', () => {
   })
   })
 
-  // ✅ Ezek működnek – hagyd meg
+ 
   it('register tab exists and switches', async () => {
     const wrapper = mount(AuthForm)
     await wrapper.find('[data-testid="register-tab"]').trigger('click')
@@ -50,7 +50,7 @@ describe('AuthForm - Register', () => {
     expect(window.fetch).toHaveBeenCalledWith('http://localhost:3300/check-email', expect.any(Object))
   })
 
-  // ✅ ÚJ: teszteli, HOGY a register FÖGGVÉNY legalább fut
+
   it('register function is called and validates', async () => {
     const wrapper = mount(AuthForm)
     wrapper.vm.name = 'Kovács János Csaba'
@@ -67,7 +67,7 @@ describe('AuthForm - Register', () => {
     await wrapper.vm.register()
     await flushPromises()
     
-    // ✅ Legalább addig eljut, hogy checkEmailAvailability meghívódjon
+   
     expect(window.fetch).toHaveBeenCalledWith('http://localhost:3300/check-email', expect.any(Object))
   })
 })

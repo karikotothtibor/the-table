@@ -1,5 +1,7 @@
 // tests/register.e2e.spec.js
 import { test, expect } from '@playwright/test'
+//Mindig másik email
+const uniqueEmail = `test_${Date.now()}@example.com`
 
 test.describe('AuthForm - Regisztráció E2E', () => {
   test('sikeres regisztráció és siker modal', async ({ page }) => {
@@ -12,7 +14,7 @@ test.describe('AuthForm - Regisztráció E2E', () => {
     // Adatok kitöltése
     await page.fill('#reg-name', 'Kovács János')
     await page.fill('#reg-tel', '06301234567')
-    await page.fill('#reg-email', 'playwright+test@example.com')
+    await page.fill('#reg-email', uniqueEmail)
     await page.fill('#reg-password', 'AbcDef12!@')
     await page.fill('#reg-confirm', 'AbcDef12!@')
 

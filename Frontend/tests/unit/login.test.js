@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import Login from '../src/components/AuthForm.vue'
+import Login from '../../src/components/AuthForm.vue'
 
 describe('Login Form', () => {
   it('renders login tab by default', () => {
@@ -27,7 +27,7 @@ describe('Login Form', () => {
     await wrapper.get('#password-login').setValue('pass123')
     await wrapper.find('button[type="submit"]').trigger('click')
     
-    // ✅ Várakozás ÖSSZES async műveletre!
+    // Várakozás ÖSSZES async műveletre!
     await flushPromises()
     
     expect(window.localStorage.setItem).toHaveBeenCalledWith('token', 'login-success')
