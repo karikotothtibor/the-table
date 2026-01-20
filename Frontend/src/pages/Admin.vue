@@ -473,9 +473,10 @@ async function openingHoursAdd() {
       },
       { once: true }
     )
-
     modal?.hide()
-
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   } catch (err) {
     console.error('Nyitvatartás mentési hiba:', err)
 
@@ -996,6 +997,7 @@ const deleteNotification = async () => {
         <a href="#Rendelesek" class="nav-link text-white"><i class="fa fa-clipboard-list me-2"></i> Rendelések</a>
         <a href="#Uzenetek" class="nav-link text-white"><i class="fa-solid fa-envelope me-2"></i> Üzenetek</a>
         <a href="#Foglalas" class="nav-link text-white"><i class="fa fa-user me-2"></i> Új foglalás</a>
+        <a href="#Nyitva" class="nav-link text-white"><i class="fa fa-calendar-alt me-2"></i> Nyitvatartás kezelése</a>
         <a href="#Naptar" class="nav-link text-white"><i class="fa fa-calendar-alt me-2"></i> Naptár</a>
         <a href="#Velemenyek" class="nav-link text-white"><i class="fa fa-comment-alt me-2"></i>Vélemények</a>
         <a href="#Felhasznalok" class="nav-link text-white"><i class="fa fa-user me-2"></i>Felhasználók kezelése</a>
@@ -1134,15 +1136,15 @@ const deleteNotification = async () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
+              <tr @click.stop>
                 <td >{{reservation.table_id}}</td>
                 <td ><span v-for="user in users" v-show="reservation.user_id === user.id">{{reservation.guest_name}}</span></td>
                 <td>{{reservation.dtime_from.split("T")[0]}}  {{  reservation.dtime_from.split("T")[1].split('.')[0].slice(0, -3)}}</td>
                 <td>{{ reservation.number_of_customers }}</td>
                 <td><span class="badge bg-danger"  v-if="reservation.status_id === 2">Foglalt</span><span class="badge bg-success"  v-if="reservation.status_id === 1">Szabad</span></td>
                 <td>
-                  <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#messageModal" @click="openMessageModal(reservation)"><i class="fa fa-comment"></i></button>
-                  <button class="btn btn-outline-secondary btn-sm" @click="selectedReservation(reservation); cancelReservation()"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#messageModal" @click.stop="openMessageModal(reservation)"><i class="fa fa-comment"></i></button>
+                  <button class="btn btn-outline-secondary btn-sm" @click.prevent="cancelReservation(selectedReservation(reservation))"><i class="fas fa-trash"></i></button>
                 </td>
               </tr>
             </tbody>
@@ -1201,7 +1203,7 @@ const deleteNotification = async () => {
                   <label class="form-label" for="cinzett">Címzett</label>
                   <select class="form-select" id="cimzett" v-model="selectedUser" :disabled="selectedUser && selectedUser.id === 1" >
                     <option value="">Válasszon felhasználót</option>
-                    <option v-for="user in users" :key="user.id" :value="user.id">
+                    <option v-for="user in users" :key="user.id" :value="user">
                       {{ user.name}}
                     </option>
                   </select>
@@ -1318,7 +1320,7 @@ const deleteNotification = async () => {
     </div>
 
       <!-- Nyitvatartási Idők -->
-      <div class="card mb-4 shadow-sm">
+      <div class="card mb-4 shadow-sm" id="Nyitva">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h2 class="card-title mb-0">Nyitvatartási Idők</h2>
           <div>
@@ -1383,7 +1385,7 @@ const deleteNotification = async () => {
                       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         Mégse
                       </button>
-                      <button type="button" class="btn btn-primary" form="editHoursForm">
+                      <button type="submit" class="btn btn-primary" form="editHoursForm">
                         Küldés
                       </button>
                     </div>
@@ -1399,7 +1401,7 @@ const deleteNotification = async () => {
               <span v-if="openningHour.open_time === 0 && openningHour.close_time === 0">Zárva</span>
               <span class="text-muted" v-else contenteditable="false">{{openningHour.open_time}}:00 - {{ openningHour.close_time }}:00</span>
             
-            <button class="btn btn-outline-secondary btn-sm" @click="deleteOpeningHours"><i class="fas fa-trash"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" @click.prevent="deleteOpeningHours(selectedOpeningHours(openningHour))"><i class="fas fa-trash"></i></button>
             <div>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#updateHoursModal" @click="openUpdateHoursModal" ><i class="fas fa-pen"></i></button>
             </div>
