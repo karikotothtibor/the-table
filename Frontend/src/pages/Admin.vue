@@ -12,7 +12,7 @@ const userSelected = ref(null);
 const table = ref([]);
 const status = ref([]);
 const reservations = ref([]);
-const tabstatus = ref(["szabad"]);
+const tabStatus = ref(["szabad"]);
 const date = ref('');
 const time = ref('');
 const timeOffSet= ref('');
@@ -186,11 +186,11 @@ const getTableStatus = async (at) => {
     const res = await fetch(url)
     if (!res.ok) throw new Error('Nem sikerült az asztal státuszt lekérni')
     const data = await res.json()
-    tabstatus.value = data
+    tabStatus.value = data
     console.log('TableStatus@', at, data)
   } catch (err) {
     console.error(err)
-    tabstatus.value = []
+    tabStatus.value = []
   }
 }
 
@@ -204,11 +204,11 @@ const getTableStatusFullRange = async () => {
     if (!res.ok) throw new Error('Nem sikerült az asztal státuszt lekérni');
     
     const data = await res.json();
-    tabstatus.value = data;
+    tabStatus.value = data;
     console.log('TableStatus FULL RANGE:', dtime_from.value, '→', dtime_to.value, data);
   } catch (err) {
     console.error(err);
-    tabstatus.value = [];
+    tabStatus.value = [];
   }
 };
 
@@ -680,11 +680,11 @@ async function reservationAdd() {
 };
 
 const sumSzabad = computed(() => 
-  (!tabstatus.value ? [] : tabstatus.value).filter(t => !t.reservation || t.reservation.length === 0).length
+  (!tabStatus.value ? [] : tabStatus.value).filter(t => !t.reservation || t.reservation.length === 0).length
 )
 
 const sumFoglalt = computed(() => 
-  (!tabstatus.value ? [] : tabstatus.value).filter(t => t.reservation?.length > 0).length
+  (!tabStatus.value ? [] : tabStatus.value).filter(t => t.reservation?.length > 0).length
 )
 
 onMounted(async()=>{
@@ -828,7 +828,7 @@ const selectedDayName = computed(() => {
 const isSelectedTableBooked = computed(() => {
 if (!selected.value || !dtime_from.value || !dtime_to.value) return false;
   
-  const table = tabstatus.value.find(t => t.id === selected.value.id);
+  const table = tabStatus.value.find(t => t.id === selected.value.id);
   if (!table?.reservation?.length) return false;
   
   const newFrom = new Date(dtime_from.value);
@@ -919,7 +919,7 @@ const timeOffsetOptions = computed(() => {
 const overlappingReservation = computed(() => {
   if (!selected.value || !dtime_from.value || !dtime_to.value) return null;
   
-  const table = tabstatus.value.find(t => t.id === selected.value.id);
+  const table = tabStatus.value.find(t => t.id === selected.value.id);
   if (!table?.reservation) return null;
   
   const newFrom = new Date(dtime_from.value);
